@@ -52,7 +52,7 @@ def write_head(fout, nmo, nelec, ms=0, orbsym=None):
 
 
 if __name__ == '__main__':
-    ps_path = "../../CAS_Cropping/planted_solutions/"
+    ps_path = "planted_solutions/"
     # File name in ps_path folder
     file_name = "2_co2_6-311++G___12_9d464efb-b312-45f8-b0ba-8c42663059dc.pkl"
     tbt, tbt_hidden, Htbt_with_killer, Htbt_hidden, sol, e_nums, E_min, spin_orbs = construct_Hamiltonian_with_solution(

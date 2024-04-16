@@ -1,10 +1,9 @@
 import numpy as np
-from matrix_utils import construct_orthogonal
-from ferm_utils import get_ferm_op, get_spin_orbitals, braket, get_fermionic_matrix, get_one_body_terms, get_two_body_tensor
+from CAS_Cropping.ferm_utils import get_ferm_op, get_spin_orbitals, braket, get_fermionic_matrix, get_one_body_terms, get_two_body_tensor
 from openfermion import normal_ordered, FermionOperator, InteractionOperator, low_rank_two_body_decomposition
 from openfermion.linalg import get_sparse_operator, get_ground_state, get_number_preserving_sparse_operator
-from qubit_utils import get_qubit_matrix, get_qubit_hf_expectation
-import ferm_utils as fermu
+from CAS_Cropping.qubit_utils import get_qubit_matrix, get_qubit_hf_expectation
+import CAS_Cropping.ferm_utils as fermu
 
 def get_system_details(mol):
     '''
@@ -21,11 +20,11 @@ def get_system_details(mol):
     elif mol == 'nh3':
         return 10, 12
     elif mol == 'n2':
-        return 14, None 
+        return 14, None
 
 def get_google_measurement(H:InteractionOperator, tiny=1e-6):
     '''
-    Get list of L operators to measure through Google's decomposition method. 
+    Get list of L operators to measure through Google's decomposition method.
     '''
     # one_bd_sq (L x N x N)
     vals, one_bd_sq, one_bd_offset, _ = low_rank_two_body_decomposition(H.two_body_tensor, truncation_threshold=tiny)
@@ -85,7 +84,7 @@ def get_hf_variance(ops, hf, n, verbose=False, tiny=1e-7):
     '''
     var = 0
     if verbose:
-        import time 
+        import time
     for op in ops:
         if verbose:
             start = time.time()
@@ -97,7 +96,7 @@ def get_hf_variance(ops, hf, n, verbose=False, tiny=1e-7):
         if verbose:
             print('Time taken: {}'.format(time.time() - start))
             print("Current variance: {}".format(cur_var))
-    return var 
+    return var
 
 def get_gs(H:FermionOperator):
     '''
@@ -166,7 +165,7 @@ def get_qubit_hf_variance(hf, ops):
 def get_hf_expmap(hf):
     '''
     Obtain mapping from a two-body tensor in chemist order to expectation
-    TODO: can be more efficient 
+    TODO: can be more efficient
     '''
     norb = len(hf) // 2
     mp = np.zeros((norb, norb, norb, norb))
@@ -175,7 +174,7 @@ def get_hf_expmap(hf):
         for q in range(norb):
             for r in range(norb):
                 for s in range(norb):
-                    ### 2x faster 
+                    ### 2x faster
                     #term = FermionOperator(term=(
                     #            (2*p, 1), (2*q, 0),
                     #            (2*r, 1), (2*s, 0)
@@ -198,7 +197,7 @@ def get_hf_expmap(hf):
 def get_hf_sqmap(hf):
     '''
     Obtain mapping from a two-body tensor in chemist order to expectation of square
-    TODO: can be more efficient, in a/b/c/d part 
+    TODO: can be more efficient, in a/b/c/d part
     '''
     norb = len(hf) // 2
     mp = np.zeros((norb**4, norb**4))
@@ -245,10 +244,10 @@ def get_tbts_hf_var(tbts, exp_mp, sq_mp):
 
 def get_tbts_hf_sqrtvar(tbts, exp_mp, sq_mp, display=True):
     '''
-    Return the hartree fock sqrt variance 
+    Return the hartree fock sqrt variance
     '''
     variances = get_tbts_hf_var(tbts, exp_mp, sq_mp)
-    
+
     if display:
         print("Variances: {}".format(variances))
         print("Sqrt Variances: {}".format(variances ** (1/2)))
@@ -258,25 +257,25 @@ def get_tbts_hf_sqrtvar(tbts, exp_mp, sq_mp, display=True):
 
 def get_one_body_correction(H : FermionOperator, obt):
     '''
-    Returning the one body offset from original Hamiltonain 
-    and the one body tensor from chemist reordering 
+    Returning the one body offset from original Hamiltonain
+    and the one body tensor from chemist reordering
     '''
     org_one_body = get_one_body_terms(H)
     chem_one_body = get_ferm_op(obt, spin_orb=True)
     return org_one_body + chem_one_body
 
 def get_one_body_correction_from_tbt(H: FermionOperator, Htbt=None):
-    """ Returning the one body difference from original Hamiltonian and two body tensor. 
+    """ Returning the one body difference from original Hamiltonian and two body tensor.
     """
-    if Htbt is None: 
+    if Htbt is None:
         Htbt = fermu.get_chemist_tbt(H)
-    
+
     return normal_ordered(H - get_ferm_op(Htbt, spin_orb=False))
-    
+
 def tbt_rangom_gen(variance, orb=4, mean=0):
     '''
-    Generate at random orb x orb x orb x orb tensor 
-    with specified variance and mean 
+    Generate at random orb x orb x orb x orb tensor
+    with specified variance and mean
     '''
     s = np.random.normal(mean, variance, orb**4)
     s = np.reshape(s, (orb, orb, orb, orb))
@@ -292,14 +291,14 @@ def tbt_variance_estimate(tbt):
 
 def single_lambda_variance_estimate(lambda_matrix, nelec):
     '''
-    Return 1/4 * (highest_eigval - lowest_eigval)**2  
-    
+    Return 1/4 * (highest_eigval - lowest_eigval)**2
+
     Args:
         lambda_matrix: norb x norb numpy matrix representing lambda[i, j]*n_i*n_j fermionic operator
 
     Returns:
         A number representing the variance estimate
-    '''    
+    '''
     norb = lambda_matrix.shape[0]
     ferm_op = get_ferm_op(lambda_matrix, spin_orb=False)
     ferm_mat = get_number_preserving_sparse_operator(ferm_op, num_qubits=2*norb, num_electrons=nelec)
@@ -307,18 +306,18 @@ def single_lambda_variance_estimate(lambda_matrix, nelec):
     high, _ = get_ground_state(-ferm_mat)
     high = -high
 
-    return 1/4 * (high - low)**2 
+    return 1/4 * (high - low)**2
 
 def get_eigvaluebased_cartan_variance_estimate(cartan_matrices, num_electron):
     '''
-    Return list of variance estimates based on cartan matrices 
-    using equation: 1/4 * (highest_eigval - lowest_eigval)**2  
+    Return list of variance estimates based on cartan matrices
+    using equation: 1/4 * (highest_eigval - lowest_eigval)**2
 
-    Args: 
-        cartan_matrices: The list of cartan matrices 
-    
+    Args:
+        cartan_matrices: The list of cartan matrices
+
     Returns:
-        variances_est: The numpy array of variance estimates 
+        variances_est: The numpy array of variance estimates
     '''
     variances_est = np.full(len(cartan_matrices), np.nan)
     for idx, cm in enumerate(cartan_matrices):

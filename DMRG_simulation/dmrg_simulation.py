@@ -1,15 +1,15 @@
-from dmrghandler.src.dmrghandler.qchem_dmrg_calc import single_qchem_dmrg_calc
-from dmrghandler.src.dmrghandler.dmrg_calc_prepare import check_spin_symmetry, spinorbitals_to_orbitals
+from CAS.dmrghandler.src.dmrghandler.qchem_dmrg_calc import single_qchem_dmrg_calc
+from CAS.dmrghandler.src.dmrghandler.dmrg_calc_prepare import check_spin_symmetry, spinorbitals_to_orbitals
 from validator.symmetry_check import check_permutation_symmetries_complex_orbitals
 from format_dmrg.format_tensor import get_correct_permutation
 from format_dmrg.format_dmrg_param import get_dmrg_param, get_dmrg_process_param
 import openfermion as of
 import numpy as np
-import saveload_utils as sl
-import ferm_utils as feru
-import var_utils as varu
+import CAS.saveload_utils as sl
+import CAS.ferm_utils as feru
+import CAS.var_utils as varu
 import sys
-sys.path.append("./")
+sys.path.append("../CAS/")
 
 
 def trace(frame, event, arg):
@@ -37,6 +37,7 @@ def get_ground_state_fci(mol):
     """
     Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
     spin_orb = of.count_qubits(Hf)
+    print(type(Hf))
 
     # Get the chemist tbt
     Htbt = feru.get_chemist_tbt(Hf, spin_orb, spin_orb=True)
@@ -56,48 +57,6 @@ def get_ground_state_fci(mol):
         sparse, initial_guess=None
     )
     return ground_energy, gs
-
-
-def get_dmrg_with_phy(mol, dmrg_param):
-    """
-
-    Args:
-        mol:
-        dmrg_param:
-
-    Returns:
-
-    """
-    # Load the hamiltonian
-    Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
-    spin_orb = of.count_qubits(Hf)
-
-    phy_tbt = feru.get_physics_tbt(Hf, spin_orb, spin_orb=True)
-
-    # One body physics
-    one_body_phy = varu.get_one_body_correction_from_tbt(Hf,
-                                                         feru.get_physics_tbt(
-                                                             Hf))
-
-    # Get the one body tensor from the difference
-    onebody_matrix = feru.get_obt(one_body_phy, n=spin_orb, spin_orb=True)
-
-    # Check symmetries
-    print("Check permutation Symmetry (PHY)",
-          check_permutation_symmetries_complex_orbitals(onebody_matrix,
-                                                        phy_tbt))
-
-    print("Check permutation Symmetry After correction (PHY)",
-          check_permutation_symmetries_complex_orbitals(
-              onebody_matrix, phy_tbt))
-
-    new_one_body_tensor, new_two_body_tensor, spin_symm_broken = (
-        spinorbitals_to_orbitals(onebody_matrix, phy_tbt))
-
-    print("Spin symmetry broken (PHY)", spin_symm_broken)
-    result = single_qchem_dmrg_calc(
-        new_one_body_tensor, new_two_body_tensor, dmrg_param)
-    return result
 
 
 def get_dmrg_energy(mol, dmrg_param):
@@ -147,16 +106,16 @@ def get_dmrg_energy(mol, dmrg_param):
 
 if __name__ == "__main__":
     # sys.settrace(trace)
-    mol = 'h4' if len(sys.argv) < 2 else sys.argv[1]
+    mol = 'h2' if len(sys.argv) < 2 else sys.argv[1]
     ground_energy, ground_state = get_ground_state_fci(mol)
     Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
     spin_orb = of.count_qubits(Hf)
     print(spin_orb)
     num_orbitals = spin_orb // 2
-    num_electrons = 4
+    num_electrons = 2
     num_spin_orbitals = spin_orb
     basis = "sto3g"
-    num_unpaired_electrons = 4
+    num_unpaired_electrons = 2
     charge = 0
     multiplicity = 1
 
@@ -189,4 +148,50 @@ if __name__ == "__main__":
     dmrg_result = get_dmrg_energy(mol, dmrg_param)
     print("FCI groundstate energy:", ground_energy)
     print("DMRG groundstate energy:", dmrg_result["dmrg_ground_state_energy"])
+    print("Energy difference:", dmrg_result["dmrg_ground_state_energy"] - ground_energy)
     print("DMRG parameters:", dmrg_variable)
+
+
+
+
+
+# def get_dmrg_with_phy(mol, dmrg_param):
+#     """
+#
+#     Args:
+#         mol:
+#         dmrg_param:
+#
+#     Returns:
+#
+#     """
+#     # Load the hamiltonian
+#     Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
+#     spin_orb = of.count_qubits(Hf)
+#
+#     phy_tbt = feru.get_physics_tbt(Hf, spin_orb, spin_orb=True)
+#
+#     # One body physics
+#     one_body_phy = varu.get_one_body_correction_from_tbt(Hf,
+#                                                          feru.get_physics_tbt(
+#                                                              Hf))
+#
+#     # Get the one body tensor from the difference
+#     onebody_matrix = feru.get_obt(one_body_phy, n=spin_orb, spin_orb=True)
+#
+#     # Check symmetries
+#     print("Check permutation Symmetry (PHY)",
+#           check_permutation_symmetries_complex_orbitals(onebody_matrix,
+#                                                         phy_tbt))
+#
+#     print("Check permutation Symmetry After correction (PHY)",
+#           check_permutation_symmetries_complex_orbitals(
+#               onebody_matrix, phy_tbt))
+#
+#     new_one_body_tensor, new_two_body_tensor, spin_symm_broken = (
+#         spinorbitals_to_orbitals(onebody_matrix, phy_tbt))
+#
+#     print("Spin symmetry broken (PHY)", spin_symm_broken)
+#     result = single_qchem_dmrg_calc(
+#         new_one_body_tensor, new_two_body_tensor, dmrg_param)
+#     return result

@@ -1,10 +1,9 @@
 """Perform CAS-CAS Decomposition
-Usage: python cas_run.py (mol) 
+Usage: python cas_run.py (mol)
 """
 import sys
 sys.path.append("../")
 import pickle
-import io
 
 import saveload_utils as sl
 import ferm_utils as feru
@@ -12,8 +11,7 @@ import csa_utils as csau
 import var_utils as varu
 import openfermion as of
 import numpy as np
-import copy
-import time 
+
 
 def partitions(n: int):
     """
@@ -23,12 +21,13 @@ def partitions(n: int):
     if n == 0:
         yield []
         return
-    
+
     # modify partitions of n-1 to form partitions of n
     for p in partitions(n-1):
         yield [1] + p
         if p and (len(p) < 2 or p[1] > p[0]):
             yield [p[0] + 1] + p[1:]
+
 
 def partition_to_orbitals(partition: list[int]) -> list:
     """
@@ -41,15 +40,16 @@ def partition_to_orbitals(partition: list[int]) -> list:
     lis = [list(range(0+sum(partition[:i]),partition[i]+sum(partition[:i]))) for i in range(len(partition))]
     return lis
 
+
 def valid_orbital_partitions(n: int) -> list[list[int]]:
     """
-    Return the valid CAS orbital partitions with the number of spin orbitals n. 
+    Return the valid CAS orbital partitions with the number of spin orbitals n.
     A partition is valid if it has more than one block and each block has at least 2 orbitals
-    """     
+    """
     valid_partition = [i for i in list(partitions(n)) if min(i) > 1 and max(i) < n]
     valid_orbitals =[partition_to_orbitals(i) for i in valid_partition]
     return valid_orbitals
-      
+
 # def compute_cas_fragment(Htbt, k):
 #     sol = csau.csa(Htbt,k = k, alpha=1, tol=tol, grad=True)
 #     cur_tbt = csau.sum_cartans(sol.x, spin_orb, k, alpha=1, complex=False)
@@ -75,9 +75,9 @@ def valid_orbital_partitions(n: int) -> list[list[int]]:
 #     with open("./planted_solution/" + mol + ".pkl", "wb") as f:
 #         pickle.dump(result, f)
 #     with open("./planted_solution/" + mol + " Hamiltonians.pkl", "wb") as f:
-#         pickle.dump(Hamiltonians, f)    
-        
-        
+#         pickle.dump(Hamiltonians, f)
+
+
 # for k in valid_orbital_partitions(spin_orb):
 #     compute_fragment(Htbt, k)
 if __name__ == "__main__":
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # Get two-body tensor
     Hf = sl.load_fermionic_hamiltonian(mol)
     _, gs = of.linalg.get_ground_state(of.linalg.get_sparse_operator(Hf))
-    spin_orb = of.count_qubits(Hf)  
+    spin_orb = of.count_qubits(Hf)
     spatial_orb = spin_orb // 2
     Htbt = feru.get_chemist_tbt(Hf, spin_orb, spin_orb = True)
     one_body = varu.get_one_body_correction_from_tbt(Hf, feru.get_chemist_tbt(Hf))
@@ -100,21 +100,26 @@ if __name__ == "__main__":
 
     onebody_matrix = feru.get_obt(one_body, n = spin_orb, spin_orb = True)
     onebody_tbt = feru.onebody_to_twobody(onebody_matrix)
-    # print(onebody_tbt.shape)
-    # print(Htbt.shape)
-
+    #print('One body tensor', onebody_matrix.tolist())
+    # print('Two body tensor', Htbt.tolist())
     Htbt = np.add(Htbt, onebody_tbt)
     recombined = feru.get_ferm_op(Htbt, True)
+    sparse = of.linalg.get_sparse_operator(recombined)
+    print(of.linalg.get_ground_state(
+        sparse, initial_guess=None
+    ))
     print("Initial Norm: {}".format(np.sum(Htbt * Htbt)))
     title = ["Partition","Norm of tbt", "relative tbt-norm", "Variance", "2-norm of eigenvalue spectrum"]
     result = [title]
+    print('Two body tensor', Htbt.tolist())
+    #print('Two body tensor', Htbt.tolist())
     Hamiltonians = {}
 
     with open("./planted_solution/" + mol + ".pkl", "wb") as f:
         pickle.dump(result, f)
     # Hamiltonians[str(k)] = sol.x
     with open("./planted_solution/" + mol + " Hamiltonians.pkl", "wb") as f:
-        pickle.dump(Hamiltonians, f)  
+        pickle.dump(Hamiltonians, f)
     from multiprocessing import Pool
     with Pool() as pool:
       pool.starmap(csau.compute_cas_fragment, [(Htbt, k, Hf, spin_orb, gs, mol) for k in valid_orbital_partitions(spin_orb)])

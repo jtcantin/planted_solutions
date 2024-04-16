@@ -1,6 +1,5 @@
-from matrix_utils import construct_unitary, construct_orthogonal, get_anti_symmetric, construct_anti_symmetric, get_orthogonal_param
-from ferm_utils import get_hf, get_ferm_op
-from var_utils import get_hf_expmap, get_hf_sqmap
+from CAS_Cropping.matrix_utils import construct_unitary, construct_orthogonal, get_anti_symmetric, construct_anti_symmetric, get_orthogonal_param
+from CAS_Cropping.ferm_utils import get_hf, get_ferm_op
 from openfermion import FermionOperator
 import numpy as np
 from itertools import product
@@ -34,11 +33,11 @@ def get_param_num(n, k, complex = False):
 
 def get_cartan_parts(x, n, alpha, complex=False):
     '''
-    Return the diagonal lambda_ij of each cartan parts in a list 
+    Return the diagonal lambda_ij of each cartan parts in a list
     '''
     def get_cartan(ctvals, complex, partitions = None):
         '''
-        Making cartan matrix given values 
+        Making cartan matrix given values
         '''
         tbt = build_tbt(n, complex)
         idx = 0
@@ -86,7 +85,7 @@ def get_tbt_parts(x, n, alpha, k, complex=False):
 
 def tbt2ferm(tbts):
     '''
-    Transforms a list of tbts to Fermionic Operators 
+    Transforms a list of tbts to Fermionic Operators
     '''
     H = FermionOperator.zero()
     for tbt in tbts:
@@ -95,11 +94,11 @@ def tbt2ferm(tbts):
         H += get_ferm_op(tbt)
     return H
 
-    
+
 def cartan_orbtransf(tensor, U, complex=True):
     '''
     tensor : ndarray N x N x N x N
-        representing V_pqrs of H = V_pqrs a_p+ a_q a_r+ a_s 
+        representing V_pqrs of H = V_pqrs a_p+ a_q a_r+ a_s
     U : ndaaray N x N
         the orbital transformation
     ortho : boolean
@@ -117,12 +116,12 @@ def cartan_orbtransf(tensor, U, complex=True):
 
 def rotated_cartan(ctvals, U, n, k, complex, killer = None):
     '''
-    Generates a rank-4 tensor representing rotated 
+    Generates a rank-4 tensor representing rotated
     second-order U(N) cartan based on given parameters
 
     Params
     -------
-    ctvals : ndarray n(n+1)/2 or n**2 
+    ctvals : ndarray n(n+1)/2 or n**2
         the values on the second-order cartan
     U : ndarray n x n
         the orthogonal matrix
@@ -142,20 +141,20 @@ def rotated_cartan(ctvals, U, n, k, complex, killer = None):
 
 #     if killer:
 #         for t in killer.terms:
-            
-                    
+
+
 
     # Rotate cartan matrix
     return cartan_orbtransf(tbt, U, complex)
 
 def sum_cartans(x, n, k, alpha, complex):
     '''
-    Return the sums of rotated cartans.  
+    Return the sums of rotated cartans.
 
     Params
     -------
     x : ndarray (n**2) * alpha
-        All the parameters specifying cartans values and the unitaries. 
+        All the parameters specifying cartans values and the unitaries.
         Pictorially the parameters are [p1, p2, p3, p_alpha]
         where pi = [cartan_parameters, u_parameters]
     n : number of orbital
@@ -213,6 +212,7 @@ def ct_decomp_cost(x, k, target_tbt, alpha, complex):
 #                 target_tbt[p,q,l,l] = 0
 #     return tbt_cost(x_tbt, target_tbt, complex)
 
+
 def get_cas_matrix(lmbdas, n, k):
     """
     Get the CAS matrix defined by the lambdas, with the CAS blocks as a list k.
@@ -220,11 +220,11 @@ def get_cas_matrix(lmbdas, n, k):
     cas = np.zeros((n,n,n,n))
     idx = 0
     for block in k:
-        for i in block:
-            for j in block:
-                for k in block:
-                    for l in block:
-                        cas[i,j,k,l] = lmbdas[idx]
+        for p in block:
+            for q in block:
+                for r in block:
+                    for s in block:
+                        cas[p,q,r,s] = lmbdas[idx]
                         idx += 1
     return cas
 
@@ -251,7 +251,7 @@ def get_o_angles(oparams, i, n):
     Params
     -------
     oparams : ndarray n(n-1)/2
-        The angles that determines a n by n unitary 
+        The angles that determines a n by n unitary
     i : int
         The index of the angles to take gradient
     Returns
@@ -284,7 +284,7 @@ def real_theta_gradients(x, k, diff):
     for block in k:
         casnum += len(block) ** 4
     opnum = int(n * (n - 1) / 2)
-    
+
 #     print(x.shape)
 #     print(casnum)
     wo = get_w_o(x[:casnum], x[casnum:], n, k)
@@ -338,7 +338,7 @@ def real_cas_grad(x, k, target, alpha):
     Params
     -------
     x : ndarray (n**2) * alpha
-        All the parameters specifying cartans values and the orthogonal matrices. 
+        All the parameters specifying cartans values and the orthogonal matrices.
         Pictorially the parameters are [p1, p2, p3, p_alpha]
         where pi = [CAS_params, o_params]
     k : the list of SIs, each SI contains the orbitals contained in each CAS block
@@ -385,7 +385,7 @@ def csa(target, k, alpha=1, tol=1e-6, grad=False, killer = False, complex=False,
         for i in range(alpha):
             x0[pnum * i + casnum: pnum *
                 (i + 1)] = np.random.rand(upnum) * 2 * np.pi
-    
+
     options = {
         "disp": True,
         "maxiter": maxiter
@@ -400,16 +400,16 @@ def csa(target, k, alpha=1, tol=1e-6, grad=False, killer = False, complex=False,
 
 
 def get_precomputed_variance(tbt, tbtev_ln, tbtev_sq):
-    """Use the precomputed expectation values, compute the variance of the given two-body tensor (tbt). 
+    """Use the precomputed expectation values, compute the variance of the given two-body tensor (tbt).
 
     Args:
-        tbt (ndarray N^4): The two-body tensor representing the operator of interest. 
-        tbtev_ln (ndarray N^4): The expectation values of corresponding entries. tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] > 
-        tbtev_sq (ndarray N^8): The expectation values of squared tbt. 
-            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] > 
+        tbt (ndarray N^4): The two-body tensor representing the operator of interest.
+        tbtev_ln (ndarray N^4): The expectation values of corresponding entries. tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] >
+        tbtev_sq (ndarray N^8): The expectation values of squared tbt.
+            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] >
 
     Returns:
-        variance (float): The variance of operator represented by the two body tensor. 
+        variance (float): The variance of operator represented by the two body tensor.
     """
     # Get <tbt>
     ev_ln = np.einsum("ijkl,ijkl->", tbt, tbtev_ln)
@@ -421,12 +421,12 @@ def get_precomputed_variance(tbt, tbtev_ln, tbtev_sq):
 
 
 def var_theta_gradients(x, n):
-    """ Compute del C / del lambdas 
+    """ Compute del C / del lambdas
     where lambdas are the symmetric diagonal coefficients for cartan elements
 
     Args:
-        x (ndarray): The n**2 parameters of current two-body tensor. 
-        n (int): Number of orbitals. 
+        x (ndarray): The n**2 parameters of current two-body tensor.
+        n (int): Number of orbitals.
 
     Returns:
         wt (ndarray): The gradient del W_{pqrs} / del theta of shape (p, q, r, s, n_theta)
@@ -447,15 +447,15 @@ def var_theta_gradients(x, n):
 
 
 def var_diag_gradients(x, n):
-    """ Compute del C / del lambdas 
+    """ Compute del C / del lambdas
     where lambdas are the symmetric diagonal coefficients for cartan elements
 
     Args:
-        x (ndarray): The n**2 parameters of current two-body tensor. 
-        n (int): Number of orbitals. 
+        x (ndarray): The n**2 parameters of current two-body tensor.
+        n (int): Number of orbitals.
 
     Returns:
-        wl (ndarray): The gradient del W_{pqrs} / del lambda of shape (p, q, r, s, n_diag) 
+        wl (ndarray): The gradient del W_{pqrs} / del lambda of shape (p, q, r, s, n_diag)
     """
     # Setup
     _, ctpnum, _ = get_param_num(n, complex=False)
@@ -474,18 +474,18 @@ def var_diag_gradients(x, n):
 
 
 def var_grad(x, target, alpha, var_weight, tbtev_ln, tbtev_sq):
-    """ Compute the gradient for VCSA 
+    """ Compute the gradient for VCSA
     Args:
-        x (ndarray (n**2) * alpha): The parameters specifying cartans values and the unitaries. 
-        target (ndarray N^4):  The 4-rank two body tensor to approximate. 
-        alpha (int): The number of CSA fragments to use. 
-        var_weight (float): The weight multiplied to the variance terms. 
-        tbtev_ln (ndarray N^4): The expectation values of corresponding entries. 
-            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] > 
-        tbtev_sq (ndarray N^8): The expectation values of squared tbt. 
-            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] > 
+        x (ndarray (n**2) * alpha): The parameters specifying cartans values and the unitaries.
+        target (ndarray N^4):  The 4-rank two body tensor to approximate.
+        alpha (int): The number of CSA fragments to use.
+        var_weight (float): The weight multiplied to the variance terms.
+        tbtev_ln (ndarray N^4): The expectation values of corresponding entries.
+            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] >
+        tbtev_sq (ndarray N^8): The expectation values of squared tbt.
+            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] >
     Returns:
-        v_grad (ndarray): The gradient for each parameter in x. 
+        v_grad (ndarray): The gradient for each parameter in x.
     """
     n = target.shape[0]
 
@@ -533,20 +533,20 @@ def var_grad(x, target, alpha, var_weight, tbtev_ln, tbtev_sq):
 
 
 def var_decomp_cost(x, target, alpha, var_weight, tbtev_ln, tbtev_sq):
-    ''' Compute the cost: sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2 
+    ''' Compute the cost: sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2
 
     Args:
-        x (ndarray (n**2) * alpha): The parameters specifying cartans values and the unitaries. 
-        target (ndarray N^4):  The 4-rank two body tensor to approximate. 
-        alpha (int): The number of CSA fragments to use. 
-        var_weight (float): The weight multiplied to the variance terms. 
-        tbtev_ln (ndarray N^4): The expectation values of corresponding entries. 
-            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] > 
-        tbtev_sq (ndarray N^8): The expectation values of squared tbt. 
-            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] > 
+        x (ndarray (n**2) * alpha): The parameters specifying cartans values and the unitaries.
+        target (ndarray N^4):  The 4-rank two body tensor to approximate.
+        alpha (int): The number of CSA fragments to use.
+        var_weight (float): The weight multiplied to the variance terms.
+        tbtev_ln (ndarray N^4): The expectation values of corresponding entries.
+            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] >
+        tbtev_sq (ndarray N^8): The expectation values of squared tbt.
+            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] >
 
     Returns:
-        cost (float): The cost sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2 
+        cost (float): The cost sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2
     '''
     norb = target.shape[0]
     total_tbt = build_tbt(norb, complex=False)
@@ -568,26 +568,26 @@ def var_decomp_cost(x, target, alpha, var_weight, tbtev_ln, tbtev_sq):
 
 
 def varcsa(target, tbtev_ln, tbtev_sq, alpha, var_weight, tol=1e-6, grad=False, options=None, x0=None):
-    '''Decompose two-body terms using cartan subalgebra and orthogonal transformatio 
-    with HF variance added in the penalty term. 
+    '''Decompose two-body terms using cartan subalgebra and orthogonal transformatio
+    with HF variance added in the penalty term.
     The cost function will be
-        sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2 
+        sum_of_squared_tbt_difference + var_weight * (sum of sqrt variance)^2
 
     Args:
-        target (ndarray N^4): The 4-rank two body tensor that the optimization will try to approximate. 
-        tbtev_ln (ndarray N^4): The expectation values of corresponding entries. 
-            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] > 
-        tbtev_sq (ndarray N^8): The expectation values of squared tbt. 
-            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] > 
-        alpha (int): The number of CSA fragments to use. 
-        var_weight (float): The weight multiplied to the variance terms. 
-        tol: The optimization tolerance. 
+        target (ndarray N^4): The 4-rank two body tensor that the optimization will try to approximate.
+        tbtev_ln (ndarray N^4): The expectation values of corresponding entries.
+            tbtev_ln[i, j, k, l] = < tbt[i, j, k, l] >
+        tbtev_sq (ndarray N^8): The expectation values of squared tbt.
+            tbtev_sq[i,j,k,l,a,b,c,d] = < tbt[i,j,k,l] * tbt[a,b,c,d] >
+        alpha (int): The number of CSA fragments to use.
+        var_weight (float): The weight multiplied to the variance terms.
+        tol: The optimization tolerance.
         grad (bool): Whether to use gradient
         options (Dict): options for scipy
-        x0 (ndarray): The initial parameters. 
+        x0 (ndarray): The initial parameters.
 
-    Returns: 
-        sol: The scipy's optimizer's solution. sol.x, sol.fun are the converged converged solution and cost function value. 
+    Returns:
+        sol: The scipy's optimizer's solution. sol.x, sol.fun are the converged converged solution and cost function value.
     '''
     norb = target.shape[0]
     enum = norb ** 4
@@ -596,7 +596,7 @@ def varcsa(target, tbtev_ln, tbtev_sq, alpha, var_weight, tol=1e-6, grad=False, 
     def fun(x): return var_decomp_cost(
         x, target, alpha, var_weight, tbtev_ln, tbtev_sq)
 
-    if x0 is None: 
+    if x0 is None:
         # Initiate starting point. Randomize angle.
         upnum, ctpnum, pnum = get_param_num(norb, complex=False)
         x0 = np.random.rand(pnum * alpha)
@@ -605,7 +605,7 @@ def varcsa(target, tbtev_ln, tbtev_sq, alpha, var_weight, tol=1e-6, grad=False, 
                 (i + 1)] = np.random.rand(upnum) * 2 * np.pi
 
     if grad:
-        def gradfun(x): 
+        def gradfun(x):
             return var_grad(x, target, alpha, var_weight, tbtev_ln, tbtev_sq)
         return scipy.optimize.minimize(fun, x0, tol=fun_tol, method='BFGS', jac=gradfun, options=options)
     else:
@@ -614,12 +614,12 @@ def varcsa(target, tbtev_ln, tbtev_sq, alpha, var_weight, tol=1e-6, grad=False, 
 
 def get_one_bd_sq(tbt, tol, verbose=False):
     '''
-    Return the list of Lpq in matrix form. 
+    Return the list of Lpq in matrix form.
 
     Args:
         tbt: The 4-rank two body tensor g_{pqrs} over orbital
         tol: Eigenvalue cutoff
-        verbose (bool): Whether to print out SVD's eigenvalues. 
+        verbose (bool): Whether to print out SVD's eigenvalues.
 
     Returns:
         Ls: list of Ls where g_{pqrs} = sum_k L^k_pq L^k_rs
@@ -649,20 +649,20 @@ def get_one_bd_sq(tbt, tol, verbose=False):
 
 def get_svdcsa_sol(tbt, tol=1e-6):
     '''
-    Return the csa solution vector based on google's SVD method 
+    Return the csa solution vector based on google's SVD method
 
     Args:
         tbt: The 4-rank two body tensor g_{pqrs} over orbital
-        tol: Tolerance for eliminating terms from google's SVD method 
+        tol: Tolerance for eliminating terms from google's SVD method
 
     Returns:
-        csa_x: The solution vector [lambda_i, theta_i, ...] representing 
+        csa_x: The solution vector [lambda_i, theta_i, ...] representing
             the csa equivalent of google's solution
         L: # of measurable terms, i enumerates to L.
     '''
     def get_solvec_from_one_bd_sq(one_bd_sq):
         '''
-        Return the lambda and theta coefficients from one_bd_sq 
+        Return the lambda and theta coefficients from one_bd_sq
 
         Args:
             one_bd_sq: The matrix L_{pq} over orbital
@@ -702,18 +702,18 @@ def get_svdcsa_sol(tbt, tol=1e-6):
 
 
 def get_svd_fragments(tbt, tol=1e-8, verbose=False):
-    '''Return a list of Fermionic Operators, each computed by SVD proceduare and is measurable using orbital rotation. 
-    The two body tensor (tbt) is assumed to be in orbital, and fermionic operator in spin-orbitals will be returned. 
-    So count_qubits(fragments[i]) == 2 * tbt.shape[0], 
+    '''Return a list of Fermionic Operators, each computed by SVD proceduare and is measurable using orbital rotation.
+    The two body tensor (tbt) is assumed to be in orbital, and fermionic operator in spin-orbitals will be returned.
+    So count_qubits(fragments[i]) == 2 * tbt.shape[0],
 
     Args:
         tbt: The 4-rank two body tensor g_{pqrs} over orbital
         tol: Eigenvalue cutoff
-        verbose (bool): Whether to print out SVD's eigenvalues. 
+        verbose (bool): Whether to print out SVD's eigenvalues.
 
     Returns:
-        fragments: list of FermionicOperator hat{L_k} where tbt_{pqrs} = sum_k L^k_pq L^k_rs, 
-            hat{L_k} = L^k_pq L^k_rs a_p^+ a_q a_r^+ a_s 
+        fragments: list of FermionicOperator hat{L_k} where tbt_{pqrs} = sum_k L^k_pq L^k_rs,
+            hat{L_k} = L^k_pq L^k_rs a_p^+ a_q a_r^+ a_s
     '''
     Ls = get_one_bd_sq(tbt, tol=tol, verbose=verbose)
     Lops = []
@@ -734,11 +734,11 @@ def read_grad_tbts(mol, norb, alpha, prefix=''):
 
 
 def build_restr_cartan_tensor(c, cartan):
-    """Build the 4-rank tensor representing the cartan specified. 
+    """Build the 4-rank tensor representing the cartan specified.
 
     Args:
         c (float): The coefficients in front of the cartan
-        cartan (ndarray NxN): The cartan matrix C where C[i, j] represents C[i, j] ni nj cartan operator. 
+        cartan (ndarray NxN): The cartan matrix C where C[i, j] represents C[i, j] ni nj cartan operator.
 
     Returns:
         cartan_tensor (ndarray NxNxNxN): The 4-rank tensor with cartan_tensor[i,i,j,j] = c * cartan[i, j]
@@ -754,16 +754,16 @@ def build_restr_cartan_tensor(c, cartan):
 
 
 def restr_sum_cartans(x, cartans):
-    """Return of 4-rank tensor represented as the sum of rotated cartans specified. 
+    """Return of 4-rank tensor represented as the sum of rotated cartans specified.
 
-    Args: 
-        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment.  
+    Args:
+        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment.
             The parameters are [p1, p2, ..., p_alpha]
             where pi = [ci, o_params]
-        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans. 
+        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans.
 
     Returns:
-        tbt (ndarray NxNxNxN): The 4-rank tensor represented by x and cartans' forms. 
+        tbt (ndarray NxNxNxN): The 4-rank tensor represented by x and cartans' forms.
     """
     n = cartans[0].shape[0]
     upnum, _, _ = get_param_num(n, complex=False)
@@ -783,17 +783,17 @@ def restr_sum_cartans(x, cartans):
 
 
 def restr_csa_cost(x, cartans, target):
-    """Obtain the L2 norm of difference between target tensor and the tensor represented by x and cartans. 
+    """Obtain the L2 norm of difference between target tensor and the tensor represented by x and cartans.
 
     Args:
-        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment. 
+        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment.
             The parameters are [p1, p2, ..., p_alpha]
             where pi = [ci, o_params]
-        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans. 
-        target (ndarray NxNxNxN): The target 4-rank tensor. 
+        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans.
+        target (ndarray NxNxNxN): The target 4-rank tensor.
 
     Returns:
-        cost (float): The L2 norm of difference between target tensor and represented tensor. 
+        cost (float): The L2 norm of difference between target tensor and represented tensor.
     """
     x_tensor = restr_sum_cartans(x, cartans)
     return tbt_cost(x_tensor, target, complex=False)
@@ -805,9 +805,9 @@ def real_diag_gradients_ij(o_params, i, j, diff):
     where lambdas are the symmetric diagonal coefficients for cartan elements
 
     Args:
-        o_params (ndarray, len=n*(n-1)/2): All the angles used for the current cartan. 
-        i, j (int): The index for ninj to get the coefficient gradient w.r.t. 
-        diff (ndarray, size=(n**4)): The difference between Hamiltonian (4 rank tensor V_{pqrs}) and what the current x's parameters represent (W_{pqrs}) . 
+        o_params (ndarray, len=n*(n-1)/2): All the angles used for the current cartan.
+        i, j (int): The index for ninj to get the coefficient gradient w.r.t.
+        diff (ndarray, size=(n**4)): The difference between Hamiltonian (4 rank tensor V_{pqrs}) and what the current x's parameters represent (W_{pqrs}) .
 
     Returns:
         cl: ∂C / ∂\lambdas_{ij}
@@ -829,16 +829,16 @@ def real_diag_gradients_ij(o_params, i, j, diff):
 
 
 def restr_coeff_gradients(single_x, cartan, diff):
-    """Get the gradients for the single coefficient of the current restricted cartan elements. 
+    """Get the gradients for the single coefficient of the current restricted cartan elements.
 
     Args:
-        single_x (ndarray (1+n*(n-1)/2)): The solution array for a single restricted cartan. 
+        single_x (ndarray (1+n*(n-1)/2)): The solution array for a single restricted cartan.
             It looks like [c, o_params] where c is the coefficient and o_params are the unitary angles.
-        cartan (ndarray NxN): The NxN matrix indicating the form of the current cartan. 
-        diff (ndarray NxNxNxN): The numerical different between target and represented two body tensors. diff = represented - target. 
+        cartan (ndarray NxN): The NxN matrix indicating the form of the current cartan.
+        diff (ndarray NxNxNxN): The numerical different between target and represented two body tensors. diff = represented - target.
 
     Returns:
-        grads (float): The gradients for the coefficient. 
+        grads (float): The gradients for the coefficient.
     """
     grads = 0
 
@@ -852,16 +852,16 @@ def restr_coeff_gradients(single_x, cartan, diff):
 
 
 def restr_theta_gradients(single_x, cartan, diff):
-    """Get the gradients for the angle of the current restricted cartan elements. 
+    """Get the gradients for the angle of the current restricted cartan elements.
 
     Args:
-        single_x (ndarray (1+n*(n-1)/2)): The solution array for a single restricted cartan. 
+        single_x (ndarray (1+n*(n-1)/2)): The solution array for a single restricted cartan.
             It looks like [c, o_params] where c is the coefficient and o_params are the unitary angles.
-        cartan (ndarray NxN): The NxN matrix indicating the form of the current cartan. 
-        diff (ndarray NxNxNxN): The numerical different between target and represented two body tensors. diff = represented - target. 
+        cartan (ndarray NxN): The NxN matrix indicating the form of the current cartan.
+        diff (ndarray NxNxNxN): The numerical different between target and represented two body tensors. diff = represented - target.
 
     Returns:
-        grads (ndarray n*(n-1)/2): The gradients for the angles. 
+        grads (ndarray n*(n-1)/2): The gradients for the angles.
     """
     def get_w_o(coeff_cartans, o_params, n):
         '''
@@ -871,7 +871,7 @@ def restr_theta_gradients(single_x, cartan, diff):
             '''
             Creates a symmetric rank-2 tensor V with each mode with n indices
             where V_ab are diagvals. This represents product of cartan
-            subalgebra of U(N) fermion algebra based on E^p_q 
+            subalgebra of U(N) fermion algebra based on E^p_q
 
             Params
             -------
@@ -908,7 +908,7 @@ def restr_theta_gradients(single_x, cartan, diff):
         Params
         -------
         oparams : ndarray n(n-1)/2
-            The angles that determines a n by n unitary 
+            The angles that determines a n by n unitary
         i : int
             The index of the angles to take gradient
         Returns
@@ -944,17 +944,17 @@ def restr_theta_gradients(single_x, cartan, diff):
 
 
 def restr_cartan_gradient(x, cartans, target):
-    """Obtain the gradient for restricted CSA's solution array. 
+    """Obtain the gradient for restricted CSA's solution array.
 
     Args:
-        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment. 
+        x (ndarray (1+n*(n-1)/2)*alpha): All the parameters specifying each Cartan fragment.
             The parameters are [p1, p2, ..., p_alpha]
             where pi = [ci, o_params]
-        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans. 
-        target (ndarray NxNxNxN): The target 4-rank tensor. 
+        cartans (List[ndarray NxN]): A list of rank-2, symmetric cartan matrices representing forms of cartans.
+        target (ndarray NxNxNxN): The target 4-rank tensor.
 
     Returns:
-        grads (ndarray (float)): The gradients. 
+        grads (ndarray (float)): The gradients.
     """
     n = target.shape[0]
     diff = restr_sum_cartans(x, cartans) - target
@@ -976,13 +976,13 @@ def restr_csa(target, cartans, tol=1e-6, grad=False):
     """Perform a CSA optimiation where the form of the cartans is fixed.
 
     Args:
-        target (ndarray NxNxNxN): The 4-rank two body tensor that the optimization will try to approximate. 
-        cartans (List[ndarray NxN]): A list of cartan matrices Ci with coefficients specifying the form of cartan. 
-            The represented cartans are sum_{ij} C[i, j] ni nj, where C[i, j] are symmetric. 
-        tol: The optimization tolerance. 
+        target (ndarray NxNxNxN): The 4-rank two body tensor that the optimization will try to approximate.
+        cartans (List[ndarray NxN]): A list of cartan matrices Ci with coefficients specifying the form of cartan.
+            The represented cartans are sum_{ij} C[i, j] ni nj, where C[i, j] are symmetric.
+        tol: The optimization tolerance.
 
     Returns:
-        sol: The scipy's optimizer's solution. sol.x, sol.fun are the converged converged solution and cost function value. 
+        sol: The scipy's optimizer's solution. sol.x, sol.fun are the converged converged solution and cost function value.
     """
     # Computing proper tolerance
     n = target.shape[0]
@@ -1007,24 +1007,24 @@ def restr_csa(target, cartans, tol=1e-6, grad=False):
 
 
 def get_restr_reflections(reflection_idx, n_orbitals, n_cartans=1):
-    """Return a list of the reflections as NxN matrices. 
+    """Return a list of the reflections as NxN matrices.
 
     Args:
-        reflection_idx (int): Specifies the type of reflection wanted. 
-            0: n_i n_i 
-            1: n_i n_j + n_j n_i 
-            2: -2n_i + n_i n_j + n_j n_i 
+        reflection_idx (int): Specifies the type of reflection wanted.
+            0: n_i n_i
+            1: n_i n_j + n_j n_i
+            2: -2n_i + n_i n_j + n_j n_i
             3: -2n_i - 2n_j + 2(n_i n_j + n_j n_i)
             4: -2n_i - 2n_j + (n_i n_j + n_j n_i)
             5: n_i + 0.5(n_jn_k + j<->k) − 0.5(n_in_k + i<->k)
-            6: n_i + 0.5(n_kn_j + <->) − 0.5(n_kn_i + <->) − 0.5(n_jn_i + <->) 
-            7: ni + nj − 0.5(n_kn_i + <->) − 0.5(n_in_j + <->) 
+            6: n_i + 0.5(n_kn_j + <->) − 0.5(n_kn_i + <->) − 0.5(n_jn_i + <->)
+            7: ni + nj − 0.5(n_kn_i + <->) − 0.5(n_in_j + <->)
             8: ni + nk + nj − 0.5(n_in_j + <->) − 0.5(n_kn_i + <->) − 0.5(n_kn_j + <->)
-        n_orbitals (int): The number of orbitals (N). 
-        n_cartans (int): How many time this matrix is repeated in the list. 
+        n_orbitals (int): The number of orbitals (N).
+        n_cartans (int): How many time this matrix is repeated in the list.
 
     Returns:
-        cartans: The list of reflections as NxN matrices. 
+        cartans: The list of reflections as NxN matrices.
     """
     # Make reflection
     reflection = np.zeros((n_orbitals, n_orbitals))
@@ -1069,11 +1069,11 @@ def get_restr_reflections(reflection_idx, n_orbitals, n_cartans=1):
 
 def compute_cas_fragment(Htbt, k, Hf, spin_orb, gs, mol):
     """
-    Compute the CAS fragment for the given two body tensor Htbt and the split k, store the information of 
-    CAS split, tbt difference norm, relative norm, ground state variance into nested lists in 
-    ./run/planted_solution/mol.pkl and store the computed fragments as a dict of the form 
+    Compute the CAS fragment for the given two body tensor Htbt and the split k, store the information of
+    CAS split, tbt difference norm, relative norm, ground state variance into nested lists in
+    ./run/planted_solution/mol.pkl and store the computed fragments as a dict of the form
     {CAS_split: computed_parameters} in ./run/planted_solution/mol Hamiltonians.pkl, where computed_parameters
-    can be input into sum_cartans to retrieve the planted_solution tbt to compute the final Hamiltonian 
+    can be input into sum_cartans to retrieve the planted_solution tbt to compute the final Hamiltonian
     operator.
     """
     import openfermion as of
@@ -1104,4 +1104,4 @@ def compute_cas_fragment(Htbt, k, Hf, spin_orb, gs, mol):
     with open("./planted_solution/" + mol + ".pkl", "wb") as f:
         pickle.dump(result, f)
     with open("./planted_solution/" + mol + " Hamiltonians.pkl", "wb") as f:
-        pickle.dump(Hamiltonians, f) 
+        pickle.dump(Hamiltonians, f)

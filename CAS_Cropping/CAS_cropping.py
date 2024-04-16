@@ -1,18 +1,12 @@
 """Construct CAS Hamiltonians with cropping
 """
-import saveload_utils as sl
-import ferm_utils as feru
-import csa_utils as csau
-import var_utils as varu
-import openfermion as of
-import numpy as np
-from sdstate import *
+import CAS_Cropping.ferm_utils as feru
+import CAS_Cropping.csa_utils as csau
+from CAS_Cropping.sdstate import *
 from itertools import product
 import random
 import h5py
-import sys
 import os
-from matrix_utils import construct_orthogonal
 import pickle
 
 ### Parameters
@@ -31,7 +25,7 @@ FCI = False
 # Checking symmetries of the planted Hamiltonian, very costly
 check_symmetry = False
 # File path and name
-path = "hamiltonians_catalysts/"
+path = "./"
 file_name = "2_co2_6-311++G___12_9d464efb-b312-45f8-b0ba-8c42663059dc.hdf5"
 
 def construct_blocks(b: int, spin_orbs: int):
@@ -48,7 +42,7 @@ def construct_blocks(b: int, spin_orbs: int):
     if len(tmp) != 0:
         k.append(tmp)
     return k
-        
+
 def get_truncated_cas_tbt(Htbt, k, casnum):
 #     Trunctate the original Hamiltonian two body tensor into the cas block structures
     cas_tbt = np.zeros(Htbt.shape)
@@ -78,12 +72,12 @@ def transform_orbs(term, orbs):
     if len(term) == 2:
         return ((orbs.index(term[0][0]), 1), (orbs.index(term[1][0]), 0))
     if len(term) == 4:
-        return ((orbs.index(term[0][0]), 1), (orbs.index(term[1][0]), 0), 
-               (orbs.index(term[2][0]), 1), (orbs.index(term[3][0]), 0))   
+        return ((orbs.index(term[0][0]), 1), (orbs.index(term[1][0]), 0),
+               (orbs.index(term[2][0]), 1), (orbs.index(term[3][0]), 0))
     return None
 
 def solve_enums(cas_tbt, k, ne_per_block = 0, ne_range = 0, balance_t = 10):
-    """Solve for number of electrons in each CAS block with FCI within the block""" 
+    """Solve for number of electrons in each CAS block with FCI within the block"""
     e_nums = []
     states = []
     E_cas = 0
@@ -129,12 +123,12 @@ def solve_enums(cas_tbt, k, ne_per_block = 0, ne_range = 0, balance_t = 10):
         print(f"current state Energy: {E_st}")
         E_cas += E_st
         states.append(st)
-        e_nums.append(ne)                
+        e_nums.append(ne)
     return e_nums, states, E_cas
 
 # Killer Construction
 def construct_killer(k, e_num, n = 0, const = 1e-2, t = 1e2, n_killer = 5):
-    """ Construct a killer operator for CAS Hamiltonian, based on cas block structure of k and the size of killer is 
+    """ Construct a killer operator for CAS Hamiltonian, based on cas block structure of k and the size of killer is
     given in k, the number of electrons in each CAS block of the ground state
     is specified by e_nums. t is the strength of quadratic balancing terms for the killer with respect to k,
     n_killer specifies the number of operators O to choose.
@@ -181,7 +175,7 @@ def construct_orbs(key: str):
         count += tmp
     return k
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
     for file_name in os.listdir(path):
         ps_path = "planted_solutions/"
         f_name = file_name.split(".")[0] + ".pkl"
@@ -213,7 +207,7 @@ if __name__ == "__main__":
 
 #         for st in states:
 #             sd_sol = sd_sol.concatenate(st)
-    # The following code segment checks the state energy for the full Hamiltonian, takes exponential space 
+    # The following code segment checks the state energy for the full Hamiltonian, takes exponential space
     # and time with respect to the number of blocks
     #     E_sol = sd_sol.exp(cas_tbt)
     #     print(f"Double check ground state energy: {E_sol}")
@@ -232,7 +226,7 @@ if __name__ == "__main__":
         if FCI:
             E_min, sol = of.get_ground_state(of.get_sparse_operator(H_cas))
             print(f"FCI Energy: {E_min}")
-            tmp_st = sdstate(n_qubit = spin_orbs)
+            tmp_st = sdstate(n_qubit=spin_orbs)
             for s in range(len(sol)):
                 if sol[s] > np.finfo(np.float32).eps:
                     tmp_st += sdstate(s, sol[s])
@@ -241,12 +235,12 @@ if __name__ == "__main__":
             tmp_st.normalize()
             print(tmp_st.exp(H_cas))
 
-        cas_killer = construct_killer(k, e_nums, n = spin_orbs)
+        cas_killer = construct_killer(k, e_nums, n=spin_orbs)
         if check_symmetry:
             assert of.FermionOperator.zero() == of.normal_ordered(of.commutator(Sz, cas_killer)), "Killer broke Sz symmetry"
             assert of.FermionOperator.zero() == of.normal_ordered(of.commutator(S2, cas_killer)), "S2 symmetry broken"
 
-        # Checking: if FCI of killer gives same result. Warning; takes exponential time 
+        # Checking: if FCI of killer gives same result. Warning; takes exponential time
         if FCI:
             sparse_with_killer = of.get_sparse_operator(cas_killer + H_cas)
             killer_Emin, killer_sol = of.get_ground_state(sparse_with_killer)

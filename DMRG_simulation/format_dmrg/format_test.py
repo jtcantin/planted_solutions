@@ -4,7 +4,7 @@ import CAS.ferm_utils as feru
 import CAS.var_utils as varu
 from format_tensor import get_correct_permutation
 import sys
-sys.path.append("../")
+sys.path.append("../../CAS/")
 def get_mol(mol):
     # Load the hamiltonian
     Hf = sl.load_fermionic_hamiltonian(mol, prefix="../")

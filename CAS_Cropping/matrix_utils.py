@@ -1,10 +1,10 @@
-import numpy as np 
+import numpy as np
 import scipy
 from scipy import optimize
 
 def get_imag_symmetric(n):
     '''
-    Construct list of i*symmetric matrices kappa_pq based on n*(n-1)/2 
+    Construct list of i*symmetric matrices kappa_pq based on n*(n-1)/2
     '''
     kappas = []
     for p in range(n):
@@ -17,7 +17,7 @@ def get_imag_symmetric(n):
 
 def get_anti_symmetric(n):
     '''
-    Construct list of anti-symmetric matrices kappa_pq based on n*(n-1)/2 
+    Construct list of anti-symmetric matrices kappa_pq based on n*(n-1)/2
     '''
     kappas = []
     for p in range(n):
@@ -45,6 +45,15 @@ def construct_orthogonal(n, params):
     anti_symm = construct_anti_symmetric(n, params)
     return scipy.linalg.expm(anti_symm)
 
+def construct_random_sz_unitary(n):
+    m = np.zeros((n,n))
+    for i in range(n):
+        for j in range(i):
+            if i % 2 == j % 2:
+                m[i,j] = np.random.random()
+                m[j,i] = -m[i,j]
+    return scipy.linalg.expm(m)
+
 def construct_unitary(n, params):
     '''
     The parameters are n(n-1) terms that determines the lower diagonals of e^{i symm + anti-symmetric}
@@ -60,21 +69,21 @@ def construct_unitary(n, params):
 
 def get_orthogonal_param(O, tol):
     '''
-    Obtain the n(n-1)/2 values v_i that determines the upper diagonals of A where 
+    Obtain the n(n-1)/2 values v_i that determines the upper diagonals of A where
     O = e^{A}
 
     Args:
-        O: A real orthogonal matrix 
-    
+        O: A real orthogonal matrix
+
     Returns:
         angles: A n*(n-1)/2 size numpy array of A_{01}, A_{02}, ... coefficients
             where O = e^{A}
-    ''' 
+    '''
     def ortho_cost(params, O):
         O_param = construct_orthogonal(O.shape[0], params)
         diff = O - O_param
         return np.sum(diff * diff)
-    
+
     if np.isclose(np.linalg.det(O), -1):
         O[:, 0] = -O[:, 0]
     n = O.shape[0]
