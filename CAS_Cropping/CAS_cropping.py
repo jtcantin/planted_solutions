@@ -77,17 +77,32 @@ def transform_orbs(term, orbs):
     return None
 
 def solve_enums(cas_tbt, k, ne_per_block = 0, ne_range = 0, balance_t = 10):
-    """Solve for number of electrons in each CAS block with FCI within the block"""
+    """
+    Solve for number of electrons in each CAS block with FCI within the block
+    Parameters:
+        cas_tbt: CAS Hamiltonian
+        k: block partitioning
+        ne_per_block: number of electrons in each CAS block
+        ne_range:
+        balance_t:
+    """
     e_nums = []
     states = []
     E_cas = 0
+
+    # orbs is each CAS block
     for orbs in k:
+        # s = start index of the block, t = end + 1 index of the block
         s = orbs[0]
         t = orbs[-1] + 1
+
+        # Number of orbitals in the block
         norbs = len(orbs)
+
+        # Number of electrons in the block
         ne = min(ne_per_block + random.randint(-ne_range, ne_range), norbs - 1)
         print(f"Ne within current block: {ne}")
-#         Construct (Ne^-ne)^2 terms in matrix, to enforce structure of states
+        # Construct (Ne^-ne)^2 terms in matrix, to enforce structure of states
         if ne_per_block != 0:
             balance_tbt = np.zeros([norbs, norbs,  norbs, norbs,])
             for p, q in product(range(norbs), repeat = 2):
@@ -100,10 +115,13 @@ def solve_enums(cas_tbt, k, ne_per_block = 0, ne_range = 0, balance_t = 10):
         flag = True
         while flag:
             balance_tbt *= strength
+            # balance_tbt is added to each element of CAS
             cas_tbt[s:t, s:t, s:t, s:t] = np.add(cas_tbt[s:t, s:t, s:t, s:t], balance_tbt)
             tmp = feru.get_ferm_op(cas_tbt[s:t, s:t, s:t, s:t], True)
             sparse_H_tmp = of.get_sparse_operator(tmp)
             tmp_E_min, t_sol = of.get_ground_state(sparse_H_tmp)
+
+            # Adding the ground state elements to forma a Slater determinant
             st = sdstate(n_qubit = len(orbs))
             for i in range(len(t_sol)):
                 if np.linalg.norm(t_sol[i]) > np.finfo(np.float32).eps:

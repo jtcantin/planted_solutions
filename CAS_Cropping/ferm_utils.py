@@ -23,8 +23,8 @@ def get_hf(n_spinorb, nelec):
 
 def get_creation_op(on):
     '''
-    Get the corresponding creation operators based on ON vec 
-    e.g. [0, 0, 1] = |001> -> a^+_0 
+    Get the corresponding creation operators based on ON vec
+    e.g. [0, 0, 1] = |001> -> a^+_0
     '''
     on_flip = np.flip(on)
     op = FermionOperator.identity()
@@ -42,7 +42,7 @@ def get_full_onvec(on):
     idx = 0
     for i in range(len(on)):
         if on[i] == 1:
-           idx += 2 ** i 
+           idx += 2 ** i
     vec = np.zeros((2**n, 1))
     vec[idx, 0] = 1
     return vec
@@ -53,12 +53,12 @@ def braket(onl, onr, H):
     '''
     def fermionic_action(fw, on):
         '''
-        Acting fermionic word to on vector . 
+        Acting fermionic word to on vector .
         Return new on with phase.
-        Example: ((1, 1), (0, 0)) |00> = 0 
+        Example: ((1, 1), (0, 0)) |00> = 0
         '''
         on = np.flip(on)
-        phase = 1 
+        phase = 1
         for fs in reversed(fw):
             if fs[1] == on[fs[0]]:
                 return on, 0
@@ -85,8 +85,8 @@ def deprecated_braket(onl, onr, H):
 
 def get_on_vec(idx, orb):
     '''
-    Get the on vector form based on index and orb 
-    e.g. |000> then |001> then |010> 
+    Get the on vector form based on index and orb
+    e.g. |000> then |001> then |010>
     '''
     on = np.zeros(orb)
     for i in range(orb):
@@ -94,11 +94,11 @@ def get_on_vec(idx, orb):
         idx = idx // 2
         on[i] = occ
     return np.flip(on)
-    
+
 def get_on_idx(on):
     '''
-    Get the index based on on vec 
-    e.g. |000> -> 0. |001> -> 1. then |010> -> 2. 
+    Get the index based on on vec
+    e.g. |000> -> 0. |001> -> 1. then |010> -> 2.
     '''
     idx = 0
     on = np.flip(on)
@@ -123,7 +123,7 @@ def get_ferm_basis(norb, nelec):
 
 def get_fermionic_matrix(H : FermionOperator, n=None, nelec=None):
     '''
-    Obtain the matrix form of fermionic operators 
+    Obtain the matrix form of fermionic operators
     '''
     if n is None:
         n = get_spin_orbitals(H)
@@ -165,7 +165,7 @@ def get_ferm_op_one(obt, spin_orb):
                         (i, 1), (j, 0)
                     ), coefficient=obt[i, j]
                 )
-    return op 
+    return op
 
 def get_ferm_op_two(tbt, spin_orb):
     '''
@@ -177,7 +177,7 @@ def get_ferm_op_two(tbt, spin_orb):
     for i in range(n):
         for j in range(n):
             for k in range(n):
-                for l in range(n): 
+                for l in range(n):
                     if not spin_orb:
                         for a in range(2):
                             for b in range(2):
@@ -210,14 +210,14 @@ def get_spin_orbitals(H : FermionOperator):
     '''
     Obtain the number of spin orbitals of H
     '''
-    n = -1 
+    n = -1
     for term, val in H.terms.items():
         if len(term) == 4:
             n = max([
                 n, term[0][0], term[1][0],
                 term[2][0], term[3][0]
             ])
-    n += 1 
+    n += 1
     return n
 
 def fci2hf(fci, n=None, tiny=1e-6):
@@ -227,13 +227,13 @@ def fci2hf(fci, n=None, tiny=1e-6):
     if n is None:
         n = int(np.log2(len(fci)))
     hf_pairs = []
-    
+
     norm = 0
     for idx, val in enumerate(fci):
         if abs(val) > tiny:
             norm += np.abs(val) ** 2
             hf_pairs.append([get_on_vec(idx, n), val])
-    
+
     scale = norm ** (1/2)
     for i in range(len(hf_pairs)):
         hf_pairs[i][1] = hf_pairs[i][1] / scale
@@ -242,7 +242,7 @@ def fci2hf(fci, n=None, tiny=1e-6):
 def hfp_braket(hfp, Hf):
     '''
     Given Hermitian Operator Hf and hf pair [(hf_i, coeff_i), ...]
-    Obtain <Hf> 
+    Obtain <Hf>
     '''
     e = 0
     nhf = len(hfp)
@@ -260,10 +260,10 @@ def hfp_braket(hfp, Hf):
 
 def get_two_body_tensor(H : FermionOperator, n = None):
     '''
-    Obtain the 4-rank tensor that represents two body interaction in H. 
-    In physics ordering a^ a^ a a 
+    Obtain the 4-rank tensor that represents two body interaction in H.
+    In physics ordering a^ a^ a a
     '''
-    # number of spin orbitals 
+    # number of spin orbitals
     if n is None:
         n = get_spin_orbitals(H)
 
@@ -274,22 +274,22 @@ def get_two_body_tensor(H : FermionOperator, n = None):
                 term[0][0], term[1][0],
                 term[2][0], term[3][0]
             ] = val
-    return tbt 
+    return tbt
 
 def get_chemist_tbt(H : FermionOperator, n = None, spin_orb=False):
     '''
-    Obtain the 4-rank tensor that represents two body interaction in H. 
-    In chemist ordering a^ a a^ a. 
+    Obtain the 4-rank tensor that represents two body interaction in H.
+    In chemist ordering a^ a a^ a.
     In addition, simplify tensor assuming symmetry between alpha/beta coefficients
     '''
-    # getting N^4 phy_tbt and then (N/2)^4 chem_tbt 
+    # getting N^4 phy_tbt and then (N/2)^4 chem_tbt
     phy_tbt = get_two_body_tensor(H, n)
     chem_tbt = np.transpose(phy_tbt, [0, 3, 1, 2])
 
     if spin_orb:
         return chem_tbt
 
-    # Spin-orbital to orbital 
+    # Spin-orbital to orbital
     n_orb = phy_tbt.shape[0]
     n_orb = n_orb // 2
     alpha_indices = list(range(0, n_orb * 2, 2))
@@ -300,9 +300,34 @@ def get_chemist_tbt(H : FermionOperator, n = None, spin_orb=False):
 
     return chem_tbt
 
+
+def get_physics_tbt(H : FermionOperator, n = None, spin_orb=False):
+    '''
+    Obtain the 4-rank tensor that represents two body interaction in H.
+    In chemist ordering a^ a a^ a.
+    In addition, simplify tensor assuming symmetry between alpha/beta coefficients
+    '''
+    # getting N^4 phy_tbt and then (N/2)^4 chem_tbt
+    phy_tbt = get_two_body_tensor(H, n)
+
+    if spin_orb:
+        return phy_tbt
+
+    # Spin-orbital to orbital
+    n_orb = phy_tbt.shape[0]
+    n_orb = n_orb // 2
+    alpha_indices = list(range(0, n_orb * 2, 2))
+    beta_indices = list(range(1, n_orb * 2, 2))
+    phy_tbt = phy_tbt[
+        np.ix_(alpha_indices, alpha_indices,
+                    beta_indices, beta_indices)]
+
+    return phy_tbt
+
+
 def separate_diagonal_tbt(chem_tbt):
     '''
-    Separate the terms representing n_p n_q terms 
+    Separate the terms representing n_p n_q terms
     '''
     n = chem_tbt.shape[0]
     diag_tbt = np.zeros((n, n, n, n))
@@ -316,13 +341,13 @@ def separate_diagonal_tbt(chem_tbt):
 
 def separate_number_op(op:FermionOperator):
     '''
-    Removing number operator from op 
+    Removing number operator from op
     '''
     diag = FermionOperator.zero()
     ndia = FermionOperator.zero()
     for term, val in op.terms.items():
         cr = []
-        an = [] 
+        an = []
         for fw in term:
             if fw[1] == 1:
                 cr.append(fw[0])
@@ -339,14 +364,14 @@ def separate_number_op(op:FermionOperator):
     return diag, ndia
 
 def get_openfermion_hf(n_qubits, n_electrons):
-    """Compute the ground hartree fock state in openfermion's format |psi><psi| 
+    """Compute the ground hartree fock state in openfermion's format |psi><psi|
 
     Args:
         n_qubits: Number of qubits (spin_orbitals).
-        n_electrons: Number of electrons in hartree fock. 
+        n_electrons: Number of electrons in hartree fock.
 
     Returns:
-        wfs (sparse_matrix): Density that represents the Hartree Fock state. 
+        wfs (sparse_matrix): Density that represents the Hartree Fock state.
     """
     # Construct ON vector
     occupation_vec = np.zeros(n_qubits)
@@ -365,13 +390,13 @@ def get_openfermion_hf(n_qubits, n_electrons):
 
 def get_obt(H : FermionOperator, n = None, spin_orb=False, tiny=1e-12):
     '''
-    Obtain the 2-rank tensor that represents one body interaction in H. 
+    Obtain the 2-rank tensor that represents one body interaction in H.
     In addition, simplify tensor assuming symmetry between alpha/beta coefficients
     '''
-    # getting N^2 phy_tbt and then (N/2)^2 chem_tbt 
+    # getting N^2 phy_tbt and then (N/2)^2 chem_tbt
     if n is None:
         n = get_spin_orbitals(H)
-    
+
     obt = np.zeros((n,n))
     for term, val in H.terms.items():
         if len(term) == 2:
@@ -386,7 +411,7 @@ def get_obt(H : FermionOperator, n = None, spin_orb=False, tiny=1e-12):
     if spin_orb:
         return obt
 
-    # Spin-orbital to orbital 
+    # Spin-orbital to orbital
     n_orb = obt.shape[0]
     n_orb = n_orb // 2
 
@@ -417,7 +442,7 @@ def onebody_to_twobody(obt):
     assumes obt is real-symmetric
     note that the association of tbt's to a given obt is not unique
     """
-    
+
     N    = obt.shape[0]
     D, U = np.linalg.eigh(obt)
 
@@ -428,6 +453,41 @@ def onebody_to_twobody(obt):
 
     tmp_path = np.einsum_path('pqrs,pa,qb,rc,sd->abcd', tbt, U, U, U, U)[0]
     chem_tbt = np.einsum('pqrs,pa,qb,rc,sd->abcd', tbt, U, U, U, U, optimize = tmp_path)
-    
+
     return chem_tbt
- 
+
+def onebody_to_twobody_phy(obt):
+    """
+    converts obt to tbt using idempotency of number operators: obt[p,p] = tbt[p,p,p,p]
+    assumes obt is real-symmetric
+    note that the association of tbt's to a given obt is not unique
+    """
+
+    N    = obt.shape[0]
+    D, U = np.linalg.eigh(obt)
+
+    U    = U.T # note that my implementation of orbital rotations is U.T @ X @ U, so this line is needed
+    tbt  = np.zeros([N,N,N,N])
+    for p in range(N):
+        tbt[p,p,p,p] = D[p]
+
+    tmp_path = np.einsum_path('prsq,pa,rb,sc,qd->abcd', tbt, U, U, U, U)[0]
+    chem_tbt = np.einsum('prsq,pa,qb,rc,sd->abcd', tbt, U, U, U, U, optimize = tmp_path)
+
+    return chem_tbt
+
+
+def tbt_to_obt(tbt):
+    """
+    converts obt to tbt using idempotency of number operators: obt[p,p] = tbt[p,p,p,p]
+    assumes obt is real-symmetric
+    note that the association of tbt's to a given obt is not unique
+    """
+
+    n = tbt.shape[0]
+    obt = np.zeros((n, n))
+    for p in range(n):
+        for q in range(n):
+            obt[p, q] = tbt[p, q, p, q]
+
+    return obt

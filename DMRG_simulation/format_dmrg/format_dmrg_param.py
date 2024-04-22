@@ -14,7 +14,7 @@ def get_dmrg_param(num_orbitals, num_electrons, num_unpaired_electrons,
     """
     nuc_rep_energy = 0
     dmrg_param = {"factor_half_convention": True,
-                  "symmetry_type": "SZ",
+                  "symmetry_type": "SU(2)",
                   "num_threads": 1,
                   "n_mkl_threads": 1,
                   "num_orbitals": num_orbitals,

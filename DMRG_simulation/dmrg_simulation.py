@@ -35,7 +35,8 @@ def get_ground_state_fci(mol):
     Returns: ground state FCI and ground state energy
 
     """
-    Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
+    # The type of Hf is Fermion Operator
+    Hf = sl.load_fermionic_hamiltonian(mol, prefix="../CAS/")
     spin_orb = of.count_qubits(Hf)
     print(type(Hf))
 
@@ -70,8 +71,9 @@ def get_dmrg_energy(mol, dmrg_param):
 
     """
     # Load the hamiltonian
-    Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
+    Hf = sl.load_fermionic_hamiltonian(mol, prefix="../CAS/")
     spin_orb = of.count_qubits(Hf)
+
 
     # Htbt is in a^ a a^ a format
     Htbt = feru.get_chemist_tbt(Hf, spin_orb, spin_orb=True)
@@ -93,7 +95,7 @@ def get_dmrg_energy(mol, dmrg_param):
         get_correct_permutation(onebody_matrix, Htbt, spin_orb))
     print("Check permutation Symmetry After correction",
           check_permutation_symmetries_complex_orbitals(
-              onebody_matrix, Htbt))
+              one_body_tensor, two_body_tensor))
 
     new_one_body_tensor, new_two_body_tensor, spin_symm_broken = (
         spinorbitals_to_orbitals(one_body_tensor, two_body_tensor))
@@ -106,18 +108,18 @@ def get_dmrg_energy(mol, dmrg_param):
 
 if __name__ == "__main__":
     # sys.settrace(trace)
-    mol = 'h2' if len(sys.argv) < 2 else sys.argv[1]
+    mol = 'h4' if len(sys.argv) < 2 else sys.argv[1]
     ground_energy, ground_state = get_ground_state_fci(mol)
-    Hf = sl.load_fermionic_hamiltonian(mol, prefix="./")
+    Hf = sl.load_fermionic_hamiltonian(mol, prefix="../CAS/")
     spin_orb = of.count_qubits(Hf)
     print(spin_orb)
     num_orbitals = spin_orb // 2
-    num_electrons = 2
+    num_electrons = 4
     num_spin_orbitals = spin_orb
     basis = "sto3g"
-    num_unpaired_electrons = 2
+    num_unpaired_electrons = 0
     charge = 0
-    multiplicity = 1
+    multiplicity = 1 + (num_electrons % 2) * 2
 
     init_state_bond_dimension = 50
     max_num_sweeps = 200

@@ -24,3 +24,28 @@ def get_correct_permutation(obt, two_body_tensor, spin_orb):
     tbt = 2 * two_body_tensor
 
     return corrected, tbt
+
+
+def physicist_to_chemist(obt, tbt, spin_orb):
+    """
+    Transform the physicist indices into chemist indices
+    Args:
+        obt:
+        tbt:
+        spin_orb:
+
+    Returns:
+
+    """
+    n = spin_orb
+    tbt_in_obt = np.zeros((n, n))
+    for p in range(n):
+        for q in range(n):
+            total = 0
+            for i in range(n):
+                total += tbt[p, i, i, q]
+            tbt_in_obt[p, q] = total
+
+    one_body_tensor = np.subtract(obt, 0.5 * tbt_in_obt)
+    two_body_tensor = 0.5 * tbt
+    return one_body_tensor, two_body_tensor
