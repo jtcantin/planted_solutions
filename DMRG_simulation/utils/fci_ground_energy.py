@@ -3,12 +3,12 @@ import numpy as np
 from CAS_Cropping.sdstate import *
 import CAS.ferm_utils as feru
 
-def get_fci_ground_energy(Hf):
-    sparse = of.linalg.get_sparse_operator(Hf)
+def get_fci_ground_energy(Hf, spin_orbs):
+    sparse = of.linalg.get_sparse_operator(Hf, n_qubits=spin_orbs)
     ground_energy, gs = of.linalg.get_ground_state(
         sparse, initial_guess=None
     )
-    return ground_energy
+    return ground_energy, gs
 
 
 def get_ground_state_manually(two_body_tensor, k, ne_each):

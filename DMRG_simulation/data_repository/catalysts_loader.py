@@ -10,6 +10,13 @@ from DMRG_simulation.format_dmrg.format_dmrg_param import (
 
 from DMRG_simulation.dmrg_simulator.dmrg_chem_tbt import get_dmrg_from_chem, get_dmrg_from_chem_original
 from DMRG_simulation.dmrg_simulator.dmrg_phy_tensor import get_dmrg_from_phy
+from pyscf.fci.direct_nosym import absorb_h1e
+from pyscf import ao2mo
+from CAS.dmrghandler.src.dmrghandler.qchem_dmrg_calc import single_qchem_dmrg_calc
+from CAS.dmrghandler.src.dmrghandler.dmrg_calc_prepare import (
+    check_spin_symmetry, spinorbitals_to_orbitals)
+import openfermion as of
+from DMRG_simulation.format_dmrg.format_tensor import get_correct_permutation
 
 default_final_bond_dim = 100
 default_sweep_schedule_bond_dims = [default_final_bond_dim] * 4 + [
@@ -53,25 +60,48 @@ def load_tensor(path_to_data):
     load_result['orb_sym'] = orb_sym
     load_result['extra_attributes'] = extra_attributes
 
+    absorbed_tbt = absorb_h1e(one_body_tensor, two_body_tensor, norb=num_orbitals,
+                              nelec=num_electrons)
+    htbt_added_phy = ao2mo.restore(1, absorbed_tbt.copy(),
+                                   num_orbitals).astype(one_body_tensor.dtype,copy=False)
+    load_result['combined_chem_tbt'] = two_body_tensor_orbital_to_spin_orbital(0.5 * htbt_added_phy)
     return load_result
 
 
 if __name__ == '__main__':
-    # result = load_tensor("../data/fcidump.2_co2_6-311++G**")
-    result = load_tensor("../data/fcidump.2_co2_6-311++G**planted_original")
+    result = load_tensor("../data/fcidump.2_co2_6-311++G**")
+    # result = load_tensor("../data/fcidump.2_co2_6-311++G**planted_original")
     # result = load_tensor("../data/fcidump.7_melact_6-311++G**")
 
-    one_body, two_body = physicist_to_chemist(result["one_body_tensor"], result["two_body_tensor"],
+    # Everything in spin orbital
+    htbt_here = result['combined_chem_tbt']
+    obt_phy = result['one_body_tensor']
+    tbt_phy = result['two_body_tensor']
+    spin_orbs = result["num_spin_orbitals"]
+    num_elec = result['num_electrons']
+    zero_matrix = np.zeros((spin_orbs, spin_orbs))
+
+
+    one_body, two_body = physicist_to_chemist(obt_phy, tbt_phy,
                                               result["num_spin_orbitals"])
+
+    # one_body, two_body = physicist_to_chemist(np.zeros((spin_orbs, spin_orbs)),
+    #                                           combined_physicist,
+    #                                           result["num_spin_orbitals"])
+    print(spin_orbs)
+    print(result["two_body_tensor"].shape)
+    print(htbt_here.shape)
+    print(two_body.shape)
     onebody_tbt = feru.onebody_to_twobody(one_body)
     # htbt_here is in chemist notation (One body two body combined)
-    htbt_here = np.add(two_body, onebody_tbt)
+    htbt_here_new = np.add(two_body, onebody_tbt)
     tbt = feru.get_ferm_op(two_body, spin_orb=True)
     tbt.compress(abs_tol=0.1)
 
 
     k = [[i for i in range(result["num_spin_orbitals"])]]
     e_nums = [result["num_electrons"]]
+    print(e_nums)
 
     num_orbitals = result["num_spin_orbitals"] // 2
     num_electrons = result["num_electrons"]
@@ -104,18 +134,17 @@ if __name__ == '__main__':
         num_orbitals, num_electrons, num_unpaired_electrons2,
         multiplicity2, dmrg_process_param)
 
-    Hf = feru.get_ferm_op(htbt_here, spin_orb=True)
-    ground_energy_tbt = get_fci_ground_energy(Hf)
-    print("Ground energy manually found:", get_ground_state_manually(htbt_here, k, e_nums)[0])
-    print("Ground energy found:", ground_energy_tbt[0])
+    Hf = feru.get_ferm_op_two(htbt_here_new, spin_orb=True)
+    ground_energy_tbt = get_fci_ground_energy(Hf, spin_orbs)
+    # print("Ground energy manually found:", get_ground_state_manually(htbt_here, k, e_nums)[0])
+    print("FCI result with CHEM obt & tbt:", ground_energy_tbt[0])
 
     chemist_original, chem_obt, chem_tbt = get_dmrg_from_chem_original(one_body, two_body, result["num_spin_orbitals"], dmrg_param)
-
-    print("DMRG result in PHY:", get_dmrg_from_phy(result["one_body_tensor"], result["two_body_tensor"], dmrg_param)["dmrg_ground_state_energy"])
-    print("DMRG with chemist original", chemist_original)
-    print("DMRG with chemist:", get_dmrg_from_chem(htbt_here, result["num_spin_orbitals"], dmrg_param2))
-    print("Obt difference norm", np.linalg.norm(chem_obt - result["one_body_tensor"]))
-    print("Tbt difference norm", np.linalg.norm(chem_tbt - result["two_body_tensor"]))
+    # print("DMRG with physicist combined:", get_dmrg_from_phy(np.zeros((spin_orbs, spin_orbs)), combined_physicist, dmrg_param)['dmrg_ground_state_energy'])
+    # DMRG result is calculated using spatial orbitals
+    print("DMRG result with PHY obt & tbt:", get_dmrg_from_phy(result["one_body_tensor"], result["two_body_tensor"], dmrg_param)["dmrg_ground_state_energy"])
+    print("DMRG result with CHEM obt & tbt:", chemist_original)
+    print("DMRG result with CHEM combined:", get_dmrg_from_chem(htbt_here, result["num_spin_orbitals"], dmrg_param))
     print("tbt shape", result["two_body_tensor"].shape)
     print("# of spin orbs", result["num_spin_orbitals"])
     print("# of electrons", result["num_electrons"])

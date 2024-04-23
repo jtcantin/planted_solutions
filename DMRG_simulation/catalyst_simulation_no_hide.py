@@ -18,6 +18,9 @@ from DMRG_simulation.utils.fci_ground_energy import (get_fci_ground_energy,
                                                      get_ground_state_manually)
 from CAS_Cropping.sdstate import *
 from DMRG_simulation.format_dmrg.format_tensor import physicist_to_chemist
+import DMRG_simulation.test.symmetry_test as symmetry_test
+from pyscf.fci.direct_nosym import absorb_h1e
+from pyscf import ao2mo
 
 def trace(frame, event, arg):
     print("%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno))
@@ -46,8 +49,8 @@ def construct_Hamiltonian_with_solution(path, file_name, key = ""):
         key = list(dic.keys())[0]
     E_min = dic[key]["E_min"]
     cas_x = dic[key]["cas_x"]
-    cas_obt_x = dic[key]["cas_one_body"]
-    cas_tbt_x = dic[key]["cas_two_body"]
+    cas_obt_x = None
+    cas_tbt_x = None
     k = dic[key]["k"]
     spin_orbs = dic[key]["spin_orbs"]
     e_nums = dic[key]["e_nums"]
@@ -59,8 +62,8 @@ def construct_Hamiltonian_with_solution(path, file_name, key = ""):
 
     print(k)
     two_body_term = csau.get_cas_matrix(cas_x, spin_orbs, k)
-    cas_one_body = csau.get_cas_matrix(cas_obt_x, spin_orbs, k)
-    cas_two_body = csau.get_cas_matrix(cas_tbt_x, spin_orbs, k)
+    cas_one_body = None
+    cas_two_body = None
 
     return (two_body_term, k, sol, e_nums, E_min, spin_orbs, e_num_actual,
             htbt_before_truncate, obt_phy, tbt_phy, cas_one_body, cas_two_body)
@@ -86,6 +89,7 @@ def cas_to_dmrg(tbt, spin_orb, dmrg_param):
         spinorbitals_to_orbitals(one_body_tensor, two_body_tensor))
 
     print("Spin symmetry broken:", spin_symm_broken)
+    print(type(new_one_body_tensor))
 
     dmrg_result = single_qchem_dmrg_calc(new_one_body_tensor, new_two_body_tensor,
                                          dmrg_param)
@@ -173,22 +177,27 @@ if __name__ == "__main__":
     one_body, two_body = physicist_to_chemist(phy_obt, phy_tbt,
                                               spin_orbs)
 
+
+    # Modify this one body to two body transformation using absorb_h1e
+    absorbed_tbt = absorb_h1e(phy_obt, phy_tbt, norb=spin_orbs//2, nelec=e_num_actual)
+    Htbt_added_phy = ao2mo.restore(1, absorbed_tbt.copy(), spin_orbs//2).astype(phy_obt.dtype, copy=False)
     onebody_tbt = feru.onebody_to_twobody(one_body)
     Htbt_added = np.add(two_body, onebody_tbt)
+
     k = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
     e_nums = [8]
 
     print("Manually found ground state:", get_ground_state_manually(two_body_original, k, e_nums)[0])
-    print("CAS obt shape: {}".format(cas_obt_x.shape))
+    # print("CAS obt shape: {}".format(cas_obt_x.shape))
     print("Actual # of electrons: {}, # of partitioning: {}".format(e_num_actual, e_nums))
 
-    Hf = feru.get_ferm_op(Htbt_added, spin_orb=True)
-
-    onebody_matrix = np.zeros((spin_orbs, spin_orbs))
-    ground_energy_tbt, gs_fci = get_fci_ground_energy(Hf)
-    gs_matrix_fci = np.matrix(gs_fci)
-    print("FCI Ground energy tbt", ground_energy_tbt)
-    print("FCI Ground state norm:", np.matmul(gs_matrix_fci, gs_matrix_fci.H))
+    # Hf = feru.get_ferm_op(Htbt_added, spin_orb=True)
+    #
+    # onebody_matrix = np.zeros((spin_orbs, spin_orbs))
+    # ground_energy_tbt, gs_fci = get_fci_ground_energy(Hf)
+    # gs_matrix_fci = np.matrix(gs_fci)
+    # print("FCI Ground energy tbt", ground_energy_tbt)
+    # print("FCI Ground state norm:", np.matmul(gs_matrix_fci, gs_matrix_fci.H))
 
     init_state_bond_dimension = 100
     max_num_sweeps = 200
@@ -216,7 +225,7 @@ if __name__ == "__main__":
 
     # We want a transformation to transform the chemical tbt to obt
     #
-    transformed_obt = feru.tbt_to_obt(cas_obt_x)
+    # transformed_obt = feru.tbt_to_obt(cas_obt_x)
     print("PHY CAS to DMRG:", get_dmrg_from_phy(phy_obt, phy_tbt, dmrg_param)["dmrg_ground_state_energy"])
     print("Chem CAS to DMRG:", cas_to_dmrg(Htbt_added, spin_orbs, dmrg_param))
     # result = cas_to_dmrg(two_body_original, phy_tbt, spin_orbs, dmrg_param)

@@ -10,6 +10,7 @@ import DMRG_simulation.test.symmetry_test as symmetry_test
 from DMRG_simulation.data_repository.catalysts_loader import load_tensor
 from DMRG_simulation.format_dmrg.format_tensor import physicist_to_chemist
 
+
 def construct_blocks(b: int, spin_orbs: int):
     """
     Constructs a CAS block partitioning
@@ -191,12 +192,13 @@ def convert_data_to_cas(load_result, setting_dict, file_name):
     # These tensors are in physicist ordering
     one_body_phy = load_result['one_body_tensor']
     two_body_phy = load_result['two_body_tensor']
+
     spin_orbs = load_result['num_spin_orbitals']
     e_num_actual = load_result['num_electrons']
 
-    one_body, two_body = physicist_to_chemist(load_result["one_body_tensor"],
-                                              load_result["two_body_tensor"],
-                                              load_result["num_spin_orbitals"])
+    one_body, two_body = physicist_to_chemist(one_body_phy,
+                                              two_body_phy,
+                                              2 * load_result["num_spin_orbitals"])
 
     # We can convert these to fermion operator.
 

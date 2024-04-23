@@ -9,6 +9,7 @@ import pickle
 import DMRG_simulation.test.symmetry_test as symmetry_test
 from DMRG_simulation.data_repository.catalysts_loader import load_tensor
 from DMRG_simulation.format_dmrg.format_tensor import physicist_to_chemist
+from CAS.dmrghandler.src.dmrghandler.pyscf_wrappers import two_body_tensor_orbital_to_spin_orbital, one_body_tensor_orbital_to_spin_orbital
 
 
 def construct_blocks(b: int, spin_orbs: int):
@@ -106,7 +107,7 @@ def solve_enums(cas_tbt, k, ne_per_block):
         while flag:
             # balance_tbt = np.zeros([norbs, norbs, norbs, norbs, ])
             # balance_tbt is added to each element of CAS
-            balance_tbt *= balance_t
+            balance_tbt *= np.zeros([norbs, norbs, norbs, norbs, ])
             cas_tbt[s:t, s:t, s:t, s:t] = np.add(cas_tbt[s:t, s:t, s:t, s:t], balance_tbt)
             tmp = feru.get_ferm_op(cas_tbt[s:t, s:t, s:t, s:t], True)
             sparse_H_tmp = of.get_sparse_operator(tmp)
@@ -266,30 +267,30 @@ def convert_data_to_cas(load_result, setting_dict, file_name: None):
     planted_sol["original_one_body"] = one_body_phy
     planted_sol["original_two_body"] = two_body_phy
 
-    return planted_sol
-    # ps_path = "../planted_solutions/"
-    # f_name = file_name.split(".")[1] + ".pkl"
-    # print("Saved file path:", ps_path + f_name)
-    #
-    # l = list(map(len, k))
-    # l = list(map(str, l))
-    # key = "-".join(l)
-    # print(key)
-    # if os.path.exists(ps_path + f_name):
-    #     with open(ps_path + f_name, 'rb') as handle:
-    #         dic = pickle.load(handle)
-    # else:
-    #     dic = {}
-    #
-    # with open(ps_path + f_name, 'wb') as handle:
-    #     dic[key] = planted_sol
-    #     pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    # return planted_sol
+    ps_path = "../planted_solutions/"
+    f_name = file_name.split(".")[1] + ".pkl"
+    print("Saved file path:", ps_path + f_name)
+
+    l = list(map(len, block_partitioning))
+    l = list(map(str, l))
+    key = "-".join(l)
+    print(key)
+    if os.path.exists(ps_path + f_name):
+        with open(ps_path + f_name, 'rb') as handle:
+            dic = pickle.load(handle)
+    else:
+        dic = {}
+
+    with open(ps_path + f_name, 'wb') as handle:
+        dic[key] = planted_sol
+        pickle.dump(dic, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 if __name__ == "__main__":
     setting_dict = {
-        "ne_per_block": [5, 3],
-        "block_partitioning": [[i for i in range(8)], [j+8 for j in range(4)]]
+        "ne_per_block": [8],
+        "block_partitioning": [[i for i in range(12)]]
     }
     file_name = "fcidump.2_co2_6-311++G**"
     load_result = load_tensor("../data/fcidump.2_co2_6-311++G**")

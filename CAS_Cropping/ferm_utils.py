@@ -196,7 +196,7 @@ def get_ferm_op_two(tbt, spin_orb):
                         )
     return op
 
-def get_ferm_op(tsr, spin_orb=False):
+def get_ferm_op(tsr, spin_orb=False) -> FermionOperator:
     '''
     Return the corresponding fermionic operators based on the tensor
     This tensor can index over spin-orbtals or orbitals
