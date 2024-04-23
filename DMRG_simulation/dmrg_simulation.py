@@ -1,8 +1,8 @@
 from CAS.dmrghandler.src.dmrghandler.qchem_dmrg_calc import single_qchem_dmrg_calc
 from CAS.dmrghandler.src.dmrghandler.dmrg_calc_prepare import check_spin_symmetry, spinorbitals_to_orbitals
-from validator.symmetry_check import check_permutation_symmetries_complex_orbitals
-from format_dmrg.format_tensor import get_correct_permutation
-from format_dmrg.format_dmrg_param import get_dmrg_param, get_dmrg_process_param
+from DMRG_simulation.validator.symmetry_check import check_permutation_symmetries_complex_orbitals
+from DMRG_simulation.format_dmrg.format_tensor import get_correct_permutation
+from DMRG_simulation.format_dmrg.format_dmrg_param import get_dmrg_param, get_dmrg_process_param
 import openfermion as of
 import numpy as np
 import CAS.saveload_utils as sl
@@ -25,7 +25,7 @@ default_sweep_schedule_noise = [1e-4] * 4 + [1e-5] * 4 + [0]
 default_sweep_schedule_davidson_threshold = [1e-10] * 8
 
 
-def get_ground_state_fci(mol):
+def get_ground_state_fci(mol, path):
     """
     Use the openfermion library to calculate the ground state FCI
 
@@ -36,7 +36,7 @@ def get_ground_state_fci(mol):
 
     """
     # The type of Hf is Fermion Operator
-    Hf = sl.load_fermionic_hamiltonian(mol, prefix="../CAS/")
+    Hf = sl.load_fermionic_hamiltonian(mol, prefix=path)
     spin_orb = of.count_qubits(Hf)
     print(type(Hf))
 
@@ -109,7 +109,7 @@ def get_dmrg_energy(mol, dmrg_param):
 if __name__ == "__main__":
     # sys.settrace(trace)
     mol = 'h4' if len(sys.argv) < 2 else sys.argv[1]
-    ground_energy, ground_state = get_ground_state_fci(mol)
+    ground_energy, ground_state = get_ground_state_fci(mol, path="../CAS/")
     Hf = sl.load_fermionic_hamiltonian(mol, prefix="../CAS/")
     spin_orb = of.count_qubits(Hf)
     print(spin_orb)
@@ -137,21 +137,10 @@ if __name__ == "__main__":
     dmrg_param = get_dmrg_param(
         num_orbitals, num_electrons, num_unpaired_electrons,
         multiplicity, dmrg_process_param)
-    dmrg_variable = {
-        "Symmetry_type": "SZ",
-        "Num_orbitals": num_orbitals,
-        "Num_spin_orbitals": num_spin_orbitals,
-        "Num_electrons": num_electrons,
-        "Num_unpaired_electrons": num_unpaired_electrons,
-        "two_Sz": int((multiplicity - 1) / 2),
-        "nuc_rep_energy": nuc_rep_energy,
-        "init_state_bond_dimension": init_state_bond_dimension
-    }
     dmrg_result = get_dmrg_energy(mol, dmrg_param)
     print("FCI groundstate energy:", ground_energy)
     print("DMRG groundstate energy:", dmrg_result["dmrg_ground_state_energy"])
     print("Energy difference:", dmrg_result["dmrg_ground_state_energy"] - ground_energy)
-    print("DMRG parameters:", dmrg_variable)
 
 
 

@@ -186,8 +186,6 @@ def convert_data_to_cas(load_result, setting_dict, file_name):
 
     """
     ne_per_block = setting_dict['ne_per_block']
-    ne_range = setting_dict['ne_range']
-    balance_strength = setting_dict['balance_strength']
     block_size = setting_dict['block_size']
 
     # These tensors are in physicist ordering
@@ -196,34 +194,41 @@ def convert_data_to_cas(load_result, setting_dict, file_name):
     spin_orbs = load_result['num_spin_orbitals']
     e_num_actual = load_result['num_electrons']
 
+    one_body, two_body = physicist_to_chemist(load_result["one_body_tensor"],
+                                              load_result["two_body_tensor"],
+                                              load_result["num_spin_orbitals"])
+
+    # We can convert these to fermion operator.
+
     # obt_in_tbt is chemist notation
-    obt_in_tbt = feru.onebody_to_twobody(one_body)
+    obt_chem = feru.onebody_to_twobody(one_body)
+    tbt_chem = two_body
     # Htbt in chemist notation
-    Htbt_added = np.add(two_body, obt_in_tbt)
-    print("Shape of Htbt:", Htbt_added.shape)
+    Htbt_added = np.add(two_body, obt_chem)
+    # print("Shape of Htbt:", Htbt_added.shape)
     # k = construct_blocks(block_size, spin_orbs)
     k = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]
     print(f"orbital splliting: {k}")
     upnum, casnum, pnum = csau.get_param_num(spin_orbs, k, complex=False)
     # Construct the truncated CAS Hamiltonian
     cas_tbt, cas_x = get_truncated_cas_tbt(Htbt_added, k, casnum)
-    cas_obt, cas_obt_x = get_truncated_cas_tbt(obt_in_tbt, k, casnum)
-    cas_tbt, cas_tbt_x = get_truncated_cas_tbt(two_body, k, casnum)
+    cas_obt, cas_obt_x = get_truncated_cas_tbt(obt_chem, k, casnum)
+    cas_tbt, cas_tbt_x = get_truncated_cas_tbt(tbt_chem, k, casnum)
 
     # print("Finding the Minimum Energy")
     # H_original = feru.get_ferm_op(cas_tbt)
     # E_min, sol = of.get_ground_state(of.get_sparse_operator(H_original))
     # print("Original Emin:", E_min)
-    e_nums, states, E_cas = solve_enums(
-        cas_tbt, k, ne_per_block=ne_per_block,
-        ne_range=ne_range, balance_t=balance_strength)
-    print(f"e_nums:{e_nums}")
-    print(f"E_cas: {E_cas}")
+    # e_nums, states, E_cas = solve_enums(
+    #     cas_tbt, k, ne_per_block=ne_per_block,
+    #     ne_range=ne_range, balance_t=balance_strength)
+    # print(f"e_nums:{e_nums}")
+    # print(f"E_cas: {E_cas}")
 
     check_symmetry = False
     FCI = False
     H_cas = feru.get_ferm_op(cas_tbt, True)
-    cas_killer = construct_killer(k, e_nums, n=spin_orbs)
+    cas_killer = construct_killer(k, ne_per_block, n=spin_orbs)
     if check_symmetry:
         symmetry_test.test_sz_symmetry(H_cas, spin_orbs)
         symmetry_test.test_s2_symmetry(H_cas, spin_orbs)
@@ -241,9 +246,9 @@ def convert_data_to_cas(load_result, setting_dict, file_name):
         print(f"FCI energy with SD: {tmp_st.exp(H_cas)}")
     print(k)
     planted_sol = {}
-    planted_sol["E_min"] = E_cas
-    planted_sol["e_nums"] = e_nums
-    planted_sol["sol"] = states
+    # planted_sol["E_min"] = E_cas
+    # planted_sol["e_nums"] = e_nums
+    # planted_sol["sol"] = states
     planted_sol["killer"] = cas_killer
     planted_sol["cas_x"] = cas_x
     planted_sol["cas_one_body"] = cas_obt_x

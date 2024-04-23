@@ -18,5 +18,5 @@ def get_dmrg_from_phy(obt, tbt, dmrg_param):
     """
     new_one_body_tensor, new_two_body_tensor, spin_symm_broken = spinorbitals_to_orbitals(obt, tbt)
     result = single_qchem_dmrg_calc(
-        new_one_body_tensor, new_two_body_tensor, dmrg_param)["dmrg_ground_state_energy"]
+        new_one_body_tensor, new_two_body_tensor, dmrg_param)
     return result

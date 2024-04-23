@@ -73,12 +73,12 @@ def cas_to_dmrg(tbt, spin_orb, dmrg_param):
     Args:
         tbt:
         spin_orb:
-        e_nums:
+        dmrg_param:
 
     Returns: (DMRG result, FCI result)
 
     """
-    obt = np.zeros((spin_orbs, spin_orbs))
+    obt = np.zeros((spin_orb, spin_orb))
     # Get the correct permutation of tensors for Block2
     one_body_tensor, two_body_tensor = (
         get_correct_permutation(obt, tbt, spin_orbs))
@@ -179,18 +179,16 @@ if __name__ == "__main__":
     e_nums = [8]
 
     print("Manually found ground state:", get_ground_state_manually(two_body_original, k, e_nums)[0])
-    # print("Manually found ground state3:",
-    #       get_ground_state_manually(Htbt_added, k, e_nums)[0])
-    print("# of Electrons:", e_nums)
-    print("Actual # of electrons:", e_num_actual)
+    print("CAS obt shape: {}".format(cas_obt_x.shape))
+    print("Actual # of electrons: {}, # of partitioning: {}".format(e_num_actual, e_nums))
 
     Hf = feru.get_ferm_op(Htbt_added, spin_orb=True)
-    # result = get_dmrg_energy(two_body_original, spin_orbs, dmrg_param)
-    # print(result)
 
     onebody_matrix = np.zeros((spin_orbs, spin_orbs))
-    ground_energy_tbt = get_fci_ground_energy(Hf)
+    ground_energy_tbt, gs_fci = get_fci_ground_energy(Hf)
+    gs_matrix_fci = np.matrix(gs_fci)
     print("FCI Ground energy tbt", ground_energy_tbt)
+    print("FCI Ground state norm:", np.matmul(gs_matrix_fci, gs_matrix_fci.H))
 
     init_state_bond_dimension = 100
     max_num_sweeps = 200
@@ -216,8 +214,10 @@ if __name__ == "__main__":
         num_orbitals, num_electrons, num_unpaired_electrons,
         multiplicity, dmrg_process_param)
 
+    # We want a transformation to transform the chemical tbt to obt
+    #
     transformed_obt = feru.tbt_to_obt(cas_obt_x)
-    print("PHY CAS to DMRG:", get_dmrg_from_phy(phy_obt, phy_tbt, dmrg_param))
+    print("PHY CAS to DMRG:", get_dmrg_from_phy(phy_obt, phy_tbt, dmrg_param)["dmrg_ground_state_energy"])
     print("Chem CAS to DMRG:", cas_to_dmrg(Htbt_added, spin_orbs, dmrg_param))
     # result = cas_to_dmrg(two_body_original, phy_tbt, spin_orbs, dmrg_param)
     # print("DMRG Ground energy tbt", result)

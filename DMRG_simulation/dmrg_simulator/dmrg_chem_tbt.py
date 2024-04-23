@@ -51,4 +51,4 @@ def get_dmrg_from_chem_original(chem_obt, chem_tbt, spin_orb: int, dmrg_param: d
 
     result = single_qchem_dmrg_calc(
         new_one_body_tensor, new_two_body_tensor, dmrg_param)
-    return result["dmrg_ground_state_energy"]
+    return result["dmrg_ground_state_energy"], one_body_tensor, two_body_tensor
