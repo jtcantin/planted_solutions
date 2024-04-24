@@ -421,8 +421,8 @@ def get_obt(H : FermionOperator, n = None, spin_orb=False, tiny=1e-12):
     obt_red_du = np.zeros((n_orb, n_orb))
     for i in range(n_orb):
         for j in range(n_orb):
-            obt_red_uu[i,j] = obt[2*i, 2*j]
-            obt_red_dd[i,j] = obt[2*i+1, 2*j+1]
+            obt_red_uu[i, j] = obt[2*i, 2*j]
+            obt_red_dd[i, j] = obt[2*i+1, 2*j+1]
             obt_red_ud = obt[2*i, 2*j+1]
             obt_red_du = obt[2*i+1, 2*j]
 
