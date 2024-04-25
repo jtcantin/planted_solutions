@@ -84,6 +84,7 @@ def solve_enums(cas_tbt, k, ne_per_block):
     """
     e_nums = []
     states = []
+    E_min_each = []
     E_cas = 0
     ne_range = 0
     balance_t = 10
@@ -130,6 +131,7 @@ def solve_enums(cas_tbt, k, ne_per_block):
                     st += sdstate(s=i, coeff=t_sol[i])
             st.normalize()
             E_st = st.exp(tmp)
+            E_min_each.append(E_st)
             flag = False
             # for sd in st.dic:
             #     ne_computed = bin(sd)[2:].count('1')
@@ -140,7 +142,7 @@ def solve_enums(cas_tbt, k, ne_per_block):
         E_cas += E_st
         states.append(st)
         e_nums.append(ne)
-    return e_nums, states, E_cas, cas_tbt
+    return e_nums, states, E_cas, cas_tbt, E_min_each
 
 
 def construct_killer(k, e_nums, tot_spin_orbs=0, const=1e-2, t=1e2, n_killer=5):
@@ -243,7 +245,7 @@ def convert_data_to_cas(load_result, setting_dict):
     # E_min, sol = of.get_ground_state(of.get_sparse_operator(H_original))
 
     # 3, Get the planted eigenvalues for the truncated Hamiltonian
-    e_nums, states, E_cas, cas_tbt_with_b = solve_enums(
+    e_nums, states, E_cas, cas_tbt_with_b, E_min_each= solve_enums(
         cas_tbt, block_partitioning, ne_per_block=ne_per_block,)
 
     # 4, Check for symmetry breaking & creating a killer operator
@@ -337,6 +339,8 @@ def cas_from_tensor(combined_tbt, setting_dict):
     ne_per_block = partition_num_elec(
         ne_block, e_num_actual, len(block_partitioning))
 
+    print(f"block partitioning: {block_partitioning}")
+
     # 2, Truncate the Hamiltonian
 
     upnum, casnum, pnum = csau.get_param_num(
@@ -349,12 +353,12 @@ def cas_from_tensor(combined_tbt, setting_dict):
     # E_min, sol = of.get_ground_state(of.get_sparse_operator(H_original))
 
     # 3, Get the planted eigenvalues for the truncated Hamiltonian
-    e_nums, states, E_cas, cas_tbt_with_b = solve_enums(
+    e_nums, states, E_cas, cas_tbt_with_b, actual_e_num = solve_enums(
         cas_tbt, block_partitioning, ne_per_block=ne_per_block, )
 
     # 4, Check for symmetry breaking & creating a killer operator
-    check_symmetry = True
-    FCI = True
+    check_symmetry = False
+    FCI = False
     H_cas = feru.get_ferm_op(cas_tbt, True)
     cas_killer = construct_killer(block_partitioning, ne_per_block,
                                   tot_spin_orbs=spin_orbs)
@@ -386,7 +390,6 @@ def cas_from_tensor(combined_tbt, setting_dict):
     # 5, Return or save the data
     planted_sol = {}
     planted_sol["E_min"] = E_cas
-    planted_sol["killer_Emin"] = killer_Emin
     planted_sol["e_nums"] = e_nums
     planted_sol["sol"] = states
     planted_sol["killer"] = cas_killer

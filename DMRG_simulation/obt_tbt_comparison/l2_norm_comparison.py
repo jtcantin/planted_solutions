@@ -9,117 +9,127 @@ import CAS_Cropping.csa_utils as csau
 from CAS_Cropping.matrix_utils import construct_random_sz_unitary
 from scipy.stats import unitary_group
 def get_several_tbt(load_result):
+    """
+    Get original TBT, absorb_h1e TBT, and symmetrized TBT
+    Args:
+        load_result: The load result of the catalyst data
+
+    Returns: Three TBTs
+
+    """
 
     # Every tbt is in spin orbital
     one_body_phy = load_result['one_body_tensor']
     two_body_phy = load_result['two_body_tensor']
+    spatial_obt_phy = load_result['one_body_tensor_spatial']
+    spatial_tbt_phy = load_result['two_body_tensor_spatial']
     spin_orbs = load_result['num_spin_orbitals']
 
     tbt_combined = load_result['combined_chem_tbt']
     one_body, two_body = physicist_to_chemist(
-        one_body_phy, two_body_phy, spin_orbs)
+        one_body_phy.copy(), two_body_phy.copy(), spin_orbs)
 
-    symmetrized_tensor = symmetrize_tensors(one_body_phy, 0.5 * two_body_phy)
+    # symmetrized_tensor = symmetrize_tensors(one_body_phy.copy(), two_body_phy.copy())
+    symmetrized_tensor = symmetrize_tensors(spatial_obt_phy.copy(),
+                                            spatial_tbt_phy.copy())
 
     return two_body, tbt_combined, symmetrized_tensor
 
 def symmetrize_tensors(h_phy_obt, g_phy_tbt):
     """
-
+    Symmetried h_pq, and g_pqrs tensors in spin orbital, physicist
     Args:
-        phy_obt: Physicist Obt in spin orbital
-        phy_tbt: Physicist Tbt in spin orbital
+        h_phy_obt: Physicist Obt in spin orbital (h_pq)
+        g_phy_tbt: Physicist Tbt in spin orbital (g_pqrs)
 
-    Returns:
+    Returns: Symmetrized tensor of chemist notation in spin orbital
 
     """
-    g_aa, g_bb, g_ab, g_ba = get_spin_tensor(g_phy_tbt)
-    h_a, h_b = get_spin_one_tensor(h_phy_obt)
-    g_obt = get_obt_from_tbt(g_phy_tbt)
-    g_a, g_b = get_spin_one_tensor(g_obt)
-    f_a = h_a - g_a
-    f_b = h_b - g_b
+    # g_aa, h_a , g_a are in spatial orbital
+    # g_aa, g_bb, g_ab, g_ba = get_spin_tensor(g_phy_tbt.copy())
+    g_aa = g_phy_tbt.copy()
+    g_bb = g_phy_tbt.copy()
+    g_ab = g_phy_tbt.copy()
+    g_ba = g_phy_tbt.copy()
 
-    A_aa = feru.onebody_to_twobody(f_a)
-    A_bb = feru.onebody_to_twobody(f_b)
+    g_obt_a = get_obt_from_tbt(g_phy_tbt.copy())
+    g_obt_b = get_obt_from_tbt(g_phy_tbt.copy())
 
-    tbt_aa = 2 * A_aa + g_aa
-    tbt_bb = 2 * A_bb + g_bb
+    f_a = h_phy_obt.copy() - g_obt_a
+    f_b = h_phy_obt.copy() - g_obt_b
+
+    # A_pqrs in spin orbital
+    A_pqrs_aa = feru.onebody_to_twobody(f_a)
+    A_pqrs_bb = feru.onebody_to_twobody(f_b)
+
+    # Extract the spatial orbital tensors
+    # A_aa, A_bb, A_ab, A_ba = get_spin_tensor(A_pqrs_aa)
+
+    tbt_aa = 2 * A_pqrs_aa + g_aa
+    tbt_bb = 2 * A_pqrs_bb + g_bb
     tbt_ab = g_ab
     tbt_ba = g_ba
 
     return (tbt_aa + tbt_bb + tbt_ba + tbt_ab) / (4 * 2)
 
-def calculate_l2_norm(tbt_1, tbt_2):
-    """
-
-    Args:
-        tbt_1: First tbt
-        tbt_2: Second tbt
-
-    Returns: The L2 norm between tbt_1 and tbt_2
-
-    """
-
-    l2_norm = scipy.linalg.norm(tbt_1 - tbt_2, ord=None)
-    return l2_norm
-
-
 def get_spin_tensor(tensor):
     """
     Everything is in the spin orbital and chemical indices
     Args:
-        tensor: tensor in spin orbital
+        tensor: tensor in spin orbital (g_pqrs)
 
-    Returns: Spin tensors correspond to each
+    Returns: Spin tensors correspond to each spin combination
 
     """
-    n = tensor.shape[0]
-    tensor_aa = np.zeros((n, n, n, n))
-    tensor_ab = np.zeros((n, n, n, n))
-    tensor_ba = np.zeros((n, n, n, n))
-    tensor_bb = np.zeros((n, n, n, n))
-    for p in range(n):
-        for q in range(n):
-            for r in range(n):
-                for s in range(n):
-                    if p % 2 == 0 and q % 2 ==0 and r % 2 == 0 and s % 2 == 0:
-                        tensor_aa[p, q, r, s] = tensor[p, q, r, s]
+    spin_orbs = tensor.shape[0]
+    spatial = tensor.shape[0] // 2
+    tensor_aa = np.zeros((spatial, spatial, spatial, spatial))
+    tensor_ab = np.zeros((spatial, spatial, spatial, spatial))
+    tensor_ba = np.zeros((spatial, spatial, spatial, spatial))
+    tensor_bb = np.zeros((spatial, spatial, spatial, spatial))
+
+    for p in range(spin_orbs):
+        for q in range(spin_orbs):
+            for r in range(spin_orbs):
+                for s in range(spin_orbs):
+                    if p % 2 == 0 and q % 2 == 0 and r % 2 == 0 and s % 2 == 0:
+                        tensor_aa[p//2, q//2, r//2, s//2] = tensor[p, q, r, s]
                     elif p % 2 == 1 and q % 2 == 1 and r % 2 == 1 and s % 2 == 1:
-                        tensor_bb[p, q, r, s] = tensor[p, q, r, s]
+                        tensor_bb[(p-1)//2, (q-1)//2, (r-1)//2, (s-1)//2] = tensor[p, q, r, s]
                     elif p % 2 == 0 and q % 2 == 0 and r % 2 == 1 and s % 2 == 1:
-                        tensor_ab[p, q, r, s] = tensor[p, q, r, s]
+                        tensor_ab[p//2, q//2, (r-1)//2, (s-1)//2] = tensor[p, q, r, s]
                     elif p % 2 == 1 and q % 2 == 1 and r % 2 == 0 and s % 2 == 0:
-                        tensor_ba[p, q, r, s] = tensor[p, q, r, s]
+                        tensor_ba[(p-1)//2, (q-1)//2, r//2, s//2] = tensor[p, q, r, s]
 
     return tensor_aa, tensor_bb, tensor_ab, tensor_ba
 
 
 def get_spin_one_tensor(tensor):
     """
-
+    Get one body tensor for each spin combination
     Args:
         tensor:
 
     Returns:
 
     """
-    n = tensor.shape[0]
-    tensor_a = np.zeros((n, n))
-    tensor_b = np.zeros((n, n))
-    for p in range(n):
-        for q in range(n):
+    spin_orb = tensor.shape[0]
+    spatial = spin_orb // 2
+    tensor_a = np.zeros((spatial, spatial))
+    tensor_b = np.zeros((spatial, spatial))
+    for p in range(spin_orb):
+        for q in range(spin_orb):
             if p % 2 == 0 and q % 2 == 0:
-                tensor_a[p, q] = tensor[p][q]
+                tensor_a[p//2, q//2] = tensor[p, q]
             elif p % 2 == 1 and q % 2 == 1:
-                tensor_b[p, q] = tensor[p][q]
+                tensor_b[(p-1)//2, (q-1)//2] = tensor[p, q]
 
     return tensor_a, tensor_b
 
 
 def get_obt_from_tbt(g_tensor):
     """
-
+    Get the one body chemist from the two body physicist tensor
     Args:
         g_tensor:
 
@@ -135,10 +145,19 @@ def get_obt_from_tbt(g_tensor):
                 total += g_tensor[p, i, i, q]
             one_body_tensor[p, q] = total
 
-    return one_body_tensor
+    return 0.5 * one_body_tensor
 
 
 def add_killer_hidden(tensor, killer):
+    """
+    Adding killer and also hiding by random unitary rotation
+    Args:
+        tensor: The tensor to be modified
+        killer: The killer operator to be added.
+
+    Returns:
+
+    """
     spin_orbs = tensor.shape[0]
     killer_tbt = feru.get_chemist_tbt(killer, spin_orbs, spin_orb=True)
     killer_one_body = of.normal_ordered(
@@ -147,8 +166,8 @@ def add_killer_hidden(tensor, killer):
         killer_one_body, n=spin_orbs, spin_orb=True)
     killer_one_body_tbt = feru.onebody_to_twobody(killer_one_body_matrix)
     killer_op = np.add(killer_tbt, killer_one_body_tbt)
-    # unitary = construct_random_sz_unitary(spin_orbs)
-    unitary = unitary_group.rvs(spin_orbs)
+    unitary = construct_random_sz_unitary(spin_orbs)
+    # tbt_hiding_directly = np.matmul(np.matrix(unitary), tensor)
 
     tbt_with_killer = np.add(tensor, killer_op)
     tbt_hidden_rotated = csau.cartan_orbtransf(tensor, unitary,
@@ -159,16 +178,6 @@ def add_killer_hidden(tensor, killer):
     return tensor, tbt_hidden_rotated, tbt_with_killer, killer_tbt_hidden
 
 
-def get_random_hiding_unitary(spin_orbs):
-    random_unitary = unitary_group.rvs(spin_orbs // 2)
-    m = np.zeros((spin_orbs, spin_orbs), dtype='complex')
-    for i in range(spin_orbs // 2):
-        for k in range(spin_orbs // 2):
-            m[2 * i, 2 * k] = random_unitary[i, k]
-            m[2 * k, 2 * i] = random_unitary[k, i]
-    return m
-
-
 if __name__ == '__main__':
     path = "../data/"
     fcidump_file = "fcidump.2_co2_6-311++G**"
@@ -177,8 +186,8 @@ if __name__ == '__main__':
     e_num_actual = load_result['num_electrons']
 
     setting_dict = {
-        "num_e_block": 4,
-        "block_size": 6,
+        "num_e_block": 8,
+        "block_size": 12,
         "actual_e_num": e_num_actual
     }
     print(tbt.shape)
@@ -233,8 +242,28 @@ if __name__ == '__main__':
     l2_norm_3_1_killer_h = scipy.linalg.norm(tbt_3_killer_hidden - tbt_1_killer_hidden,
                                            ord=None)
 
+    l2_norm_1_original = scipy.linalg.norm(tbt_1, ord=None)
+    l2_norm_1_hidden = scipy.linalg.norm(tbt_1_hidden, ord=None)
+    l2_norm_1_killer = scipy.linalg.norm(tbt_1_killer, ord=None)
+    l2_norm_1_killer_hidden = scipy.linalg.norm(tbt_1_killer_hidden, ord=None)
+
+    l2_norm_2_original = scipy.linalg.norm(tbt_2, ord=None)
+    l2_norm_2_hidden = scipy.linalg.norm(tbt_2_hidden, ord=None)
+    l2_norm_2_killer = scipy.linalg.norm(tbt_2_killer, ord=None)
+    l2_norm_2_killer_hidden = scipy.linalg.norm(tbt_2_killer_hidden, ord=None)
+
+    l2_norm_3_original = scipy.linalg.norm(tbt_3, ord=None)
+    l2_norm_3_hidden = scipy.linalg.norm(tbt_3_hidden, ord=None)
+    l2_norm_3_killer = scipy.linalg.norm(tbt_3_killer, ord=None)
+    l2_norm_3_killer_hidden = scipy.linalg.norm(tbt_3_killer_hidden, ord=None)
+
+    print(f"L2 norms for case 1: Original:{l2_norm_1_original} Hidden: {l2_norm_1_hidden} Killer: {l2_norm_1_killer} Killer Hidden: {l2_norm_1_killer_hidden}")
     print(
-        f"Original L2 norm difference 1-2:{l2_norm_1_2}, 2-3:{l2_norm_2_3}, 3-1:{l2_norm_3_1}")
+        f"L2 norms for case 2: Original:{l2_norm_2_original} Hidden: {l2_norm_2_hidden} Killer: {l2_norm_2_killer} Killer Hidden: {l2_norm_2_killer_hidden}")
+    print(
+        f"L2 norms for case 3: Original:{l2_norm_3_original} Hidden: {l2_norm_3_hidden} Killer: {l2_norm_3_killer} Killer Hidden: {l2_norm_3_killer_hidden}")
+    # print(
+    #     f"Original L2 norm difference 1-2:{l2_norm_1_2}, 2-3:{l2_norm_2_3}, 3-1:{l2_norm_3_1}")
     print(
         f"Hidden L2 norm difference 1-2:{l2_norm_1_2_hidden}, 2-3:{l2_norm_2_3_hidden}, 3-1:{l2_norm_3_1_hidden}")
     print(

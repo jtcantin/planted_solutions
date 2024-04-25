@@ -454,6 +454,7 @@ def onebody_to_twobody(obt):
     tmp_path = np.einsum_path('pqrs,pa,qb,rc,sd->abcd', tbt, U, U, U, U)[0]
     chem_tbt = np.einsum('pqrs,pa,qb,rc,sd->abcd', tbt, U, U, U, U, optimize = tmp_path)
 
+
     return chem_tbt
 
 def onebody_to_twobody_phy(obt):

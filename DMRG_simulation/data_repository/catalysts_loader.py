@@ -49,8 +49,10 @@ def load_tensor(path_to_data):
         extra_attributes,
     ) = load_tensors_from_fcidump(path_to_data)
 
-    load_result['one_body_tensor'] = one_body_tensor_orbital_to_spin_orbital(one_body_tensor)
-    load_result['two_body_tensor'] = two_body_tensor_orbital_to_spin_orbital(two_body_tensor)
+    load_result['one_body_tensor'] = one_body_tensor_orbital_to_spin_orbital(one_body_tensor.copy())
+    load_result['two_body_tensor'] = two_body_tensor_orbital_to_spin_orbital(two_body_tensor.copy())
+    load_result['one_body_tensor_spatial'] = one_body_tensor.copy()
+    load_result['two_body_tensor_spatial'] = two_body_tensor.copy()
     load_result['nuc_rep_energy'] = nuc_rep_energy
     load_result['num_orbitals'] = num_orbitals
     load_result['num_spin_orbitals'] = num_spin_orbitals
@@ -69,6 +71,8 @@ def load_tensor(path_to_data):
 
 
 if __name__ == '__main__':
+
+
     result = load_tensor("../data/fcidump.2_co2_6-311++G**")
     # result = load_tensor("../data/fcidump.2_co2_6-311++G**planted_original")
     # result = load_tensor("../data/fcidump.7_melact_6-311++G**")

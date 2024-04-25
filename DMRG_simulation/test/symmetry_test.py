@@ -25,30 +25,37 @@ def test_one_body_symmetry(one_body_tensor):
 
 
 def test_two_body_symmetry_pq_rs(two_body_tensor):
-    num_orbitals = two_body_tensor.shape[0]
+    num_spin_orbitals = two_body_tensor.shape[0]
+    num_orbitals = num_spin_orbitals // 2
     symm_check_passed = True
     for p in range(num_orbitals):
         for q in range(num_orbitals):
             for r in range(num_orbitals):
                 for s in range(num_orbitals):
                     if (not np.allclose(
-                            two_body_tensor[p, q, r, s],
-                            two_body_tensor[r, s, p, q])):
+                            two_body_tensor[2 * p, 2 * q, 2 * r, 2 * s],
+                            two_body_tensor[
+                                2 * p + 1, 2 * q + 1, 2 * r, 2 * s
+                            ],
+                        )):
                         symm_check_passed = False
 
     assert symm_check_passed, "pq, rs not exchangeable. Symmetry check failed."
 
 
 def test_two_body_symmetry_conj_pqrs(two_body_tensor):
-    num_orbitals = two_body_tensor.shape[0]
+    num_spin_orbitals = two_body_tensor.shape[0]
+    num_orbitals = num_spin_orbitals // 2
     symm_check_passed = True
     for p in range(num_orbitals):
         for q in range(num_orbitals):
             for r in range(num_orbitals):
                 for s in range(num_orbitals):
                     if (not np.allclose(
-                            two_body_tensor[p, q, r, s],
-                            two_body_tensor[q, p, s, r].conj(),
+                            two_body_tensor[2 * p, 2 * q, 2 * r, 2 * s],
+                            two_body_tensor[
+                                2 * p, 2 * q, 2 * r + 1, 2 * s + 1
+                            ],
                         )):
                         symm_check_passed = False
 
@@ -56,15 +63,21 @@ def test_two_body_symmetry_conj_pqrs(two_body_tensor):
 
 
 def test_two_body_symmetry_conj_srqp(two_body_tensor):
-    num_orbitals = two_body_tensor.shape[0]
+    num_spin_orbitals = two_body_tensor.shape[0]
+    num_orbitals = num_spin_orbitals // 2
     symm_check_passed = True
     for p in range(num_orbitals):
         for q in range(num_orbitals):
             for r in range(num_orbitals):
                 for s in range(num_orbitals):
                     if (not np.allclose(
-                            two_body_tensor[p, q, r, s],
-                            two_body_tensor[s, r, q, p].conj(),
+                            two_body_tensor[2 * p, 2 * q, 2 * r, 2 * s],
+                            two_body_tensor[
+                                2 * p + 1,
+                                2 * q + 1,
+                                2 * r + 1,
+                                2 * s + 1,
+                            ],
                         )):
                         symm_check_passed = False
 
