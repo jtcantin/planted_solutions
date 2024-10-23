@@ -1,0 +1,7 @@
+env_planted_solutions/*
+OLD_CODE/*
+block_size_test/*
+fcidumps_catalysts/*
+__pycache__/*
+*.xlsx
+*.csv
