@@ -5,3 +5,6 @@ fcidumps_catalysts/*
 __pycache__/*
 *.xlsx
 *.csv
+temp_store/*
+*.log
+temp_*
