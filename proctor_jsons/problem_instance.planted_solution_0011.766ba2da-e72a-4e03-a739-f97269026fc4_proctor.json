@@ -1,0 +1,65 @@
+{
+    "$schema": "https://raw.githubusercontent.com/isi-usc-edu/qb-gsee-benchmark/refs/heads/main/schemas/problem_instance.schema.0.0.1.json",
+    "references": [
+        "https://github.com/jtcantin/planted_solutions"
+    ],
+    "problem_instance_uuid": "766ba2da-e72a-4e03-a739-f97269026fc4",
+    "creation_timestamp": "2024-11-14T10:19:01.677253",
+    "calendar_due_date": null,
+    "short_name": "planted_solution_0011",
+    "license": {
+        "name": "Apache 2.0",
+        "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "contact_info": [
+        {
+            "name": "Joshua T. Cantin",
+            "email": "joshua.cantin@utoronto.ca",
+            "institution": "University of Toronto at Scarborough"
+        }
+    ],
+    "status": "in_development",
+    "superseded_by": null,
+    "problem_type": "GSEE",
+    "application_domain": "QC",
+    "instance_data": [
+        {
+            "supporting_files": [
+                {
+                    "instance_data_object_uuid": "befcf6f0-cfcb-49b7-b661-de48ad8a44c8",
+                    "instance_data_object_url": "sftp://sftp.l3harris.com/gsee/planted_solutions/fcidump.planted_solution_0011.befcf6f0-cfcb-49b7-b661-de48ad8a44c8.gz",
+                    "instance_data_checksum": "f57caedd6b03cab2f27670179eda967973044356",
+                    "instance_data_checksum_type": "sha1sum"
+                }
+            ]
+        }
+    ],
+    "requirements": [
+        {
+            "probability_of_success": 0.99,
+            "time_limit_seconds": 86400,
+            "accuracy": 1.0,
+            "energy_units": "millihartree",
+            "energy_target": 0.99
+        }
+    ],
+    "features": {
+        "multiplicity": 1,
+        "num_electrons": 50,
+        "num_orbitals": 31,
+        "utility_scale": false,
+        "block_size": 4,
+        "ne_per_block": 8,
+        "balance_strength": 10.0,
+        "ne_range": 0,
+        "n_killer": 3,
+        "rng_global_seed": 9221496,
+        "utility_scale_threshold": 40,
+        "github_repository_url": "https://github.com/jtcantin/planted_solutions",
+        "github_commit_sha": "7ca06fd3be2449b98330c97c9f756c541ca7e63f",
+        "paper_reference_doi": "Not Available",
+        "known_ground_state_energy_hartrees": -588.2719562417219,
+        "source_fcidump": "fcidump.62_3_15_af_noncan_0.2_new.6e2bf415-6a69-4b36-ba0f-780a11cb7c0b.gz",
+        "generation_code_url": "https://github.com/jtcantin/planted_solutions/blob/7ca06fd3be2449b98330c97c9f756c541ca7e63f/planted_hamiltonian_generator.ipynb"
+    }
+}
