@@ -8,3 +8,4 @@ __pycache__/*
 temp_store/*
 *.log
 temp_*
+generated_planted_solutions/*

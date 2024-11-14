@@ -24,3 +24,6 @@ This code is composed of or based on code written by (alphabetical order) Joshua
 
 # Article
 Article to be cited.
+
+# Ground State Energy Estimation Benchmark
+Proctor problem instance json files for the [GSEE benchmark](https://github.com/isi-usc-edu/qb-gsee-benchmark) can be found in the folder `proctor_jsons`.
