@@ -16,6 +16,7 @@ import json
 import jsonschema
 from pathlib import Path
 import hashlib
+import uuid
 
 
 # log = logging.getLogger("{Path(config_file_name).stem}")
@@ -582,15 +583,13 @@ contact_info_temp = [
     }
 ]
 
-requirements_default = (
-    {
-        "probability_of_success": 0.99,
-        "time_limit_seconds": 172800,
-        "accuracy": 1.0,
-        "energy_units": "millihartree",
-        "energy_target": 0.99,
-    },
-)
+requirements_default = {
+    "probability_of_success": 0.99,
+    "time_limit_seconds": 172800,
+    "accuracy": 1.0,
+    "energy_units": "millihartree",
+    "energy_target": 0.99,
+}
 
 
 def ensure_required_in_dict(dictionary: dict, required_keys: list[str]):
@@ -669,6 +668,8 @@ def gen_json_files(
             "github_commit_sha",
             "paper_reference_doi",
             "known_ground_state_energy_hartrees",
+            "killer_coefficient",
+            "orbital_rotation_angle_scaling_factor",
         ],
     )
 
@@ -693,8 +694,9 @@ def gen_json_files(
         "superseded_by": superseded_by,
         "problem_type": problem_type,
         "application_domain": application_domain,
-        "instance_data": [
+        "tasks": [
             {
+                "task_uuid": str(uuid.uuid4()),
                 "supporting_files": [
                     {
                         "instance_data_object_uuid": uuid_string_fcidump,
@@ -703,16 +705,16 @@ def gen_json_files(
                         "instance_data_checksum": str(digestobj.hexdigest()),
                         "instance_data_checksum_type": "sha1sum",
                     }
-                ]
+                ],
+                "requirements": requirements,
+                "features": {
+                    "multiplicity": multiplicity,
+                    "num_electrons": num_electrons,
+                    "num_orbitals": num_orbitals,
+                    "utility_scale": utility_scale,
+                },
             },
         ],
-        "requirements": requirements,
-        "features": {
-            "multiplicity": multiplicity,
-            "num_electrons": num_electrons,
-            "num_orbitals": num_orbitals,
-            "utility_scale": utility_scale,
-        },
     }
     Path(filename_json).parent.mkdir(parents=True, exist_ok=True)
     save_json(filename_json, performer_json_dict)
@@ -729,7 +731,7 @@ def gen_json_files(
 
     proctor_dict["generation_code_url"] = generation_code_url
 
-    performer_json_dict["features"].update(proctor_dict)
+    performer_json_dict["tasks"][0]["features"].update(proctor_dict)
 
     save_json(filename_json_proctor, performer_json_dict)
 
