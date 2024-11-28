@@ -421,6 +421,7 @@ def unitary_rotation_obfuscation(
     spatial_orbs,
     rng_obj=None,
     core_energy=0.0,
+    scaling_factor=1.0,
 ):
     """Generate orbital rotations to hide the Hamiltonian Structure and generate different
     versions of the Hamiltonian.
@@ -454,7 +455,7 @@ def unitary_rotation_obfuscation(
 
     # Set up random unitary to hide 2e tensor
     random_uparams = np.array(
-        rng_obj.uniform(0, 1, size=upnum) * 0.01, dtype=np.float64
+        rng_obj.uniform(0, 2 * np.pi * scaling_factor, size=upnum), dtype=np.float64
     )
     U = np.array(construct_orthogonal(spatial_orbs, random_uparams), dtype=np.float64)
     # Hide 2e etensor with random unitary transformation
@@ -697,7 +698,8 @@ def gen_json_files(
                 "supporting_files": [
                     {
                         "instance_data_object_uuid": uuid_string_fcidump,
-                        "instance_data_object_url": fcidump_permanent_storage_location + f"{Path(filename_fcidump).name}",
+                        "instance_data_object_url": fcidump_permanent_storage_location
+                        + f"{Path(filename_fcidump).name}",
                         "instance_data_checksum": str(digestobj.hexdigest()),
                         "instance_data_checksum_type": "sha1sum",
                     }
