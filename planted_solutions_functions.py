@@ -459,6 +459,12 @@ def unitary_rotation_obfuscation(
         rng_obj.uniform(0, 2 * np.pi * scaling_factor, size=upnum), dtype=np.float64
     )
     U = np.array(construct_orthogonal(spatial_orbs, random_uparams), dtype=np.float64)
+    # Ensure U is unitary
+    print(
+        f"Deviation from unitary: {np.linalg.norm(np.eye(spatial_orbs) - np.dot(U, U.T.conj()))}"
+    )
+    assert np.allclose(np.eye(spatial_orbs), np.dot(U, U.T.conj()))
+
     # Hide 2e etensor with random unitary transformation
     H_hidden = (core_energy, orbtransf(obt, U), orbtransf(tbt, U))
     H_killer_hidden = (
