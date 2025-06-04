@@ -22,7 +22,7 @@ The *performer* problem instance json file contains the information needed for a
 The *proctor* problem instance json file contains the information as in the performer file, plus information required to reproduce the planted solution fcidump file. 
 
 # Authors
-This code is composed of or based on code written by (alphabetical order) Joshua T. Cantin [jtcantin], Rick Huang [Rick0317], Ignacio Loaiza [iloaiza], Luis A. Martínez-Martínez [lamq317], Linjun Wang [Zephrous5747], and Tzu-Ching (Thomson) Yen [ThomsonYen].
+This code is composed of or based on code written by (alphabetical order) Joshua T. Cantin [jtcantin], Rick Huang [Rick0317], Ignacio Loaiza [iloaiza], Luis A. Martínez-Martínez [lamq317], Smik Patel [SmikPatel] Linjun Wang [Zephrous5747], and Tzu-Ching (Thomson) Yen [ThomsonYen].
 
 # Article
 Article to be cited.
