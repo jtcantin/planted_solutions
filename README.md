@@ -25,12 +25,12 @@ The *proctor* problem instance json file contains the information as in the perf
 This code is composed of or based on code written by (alphabetical order) Joshua T. Cantin [jtcantin], Rick Huang [Rick0317], Ignacio Loaiza [iloaiza], Luis A. Martínez-Martínez [lamq317], Linjun Wang [Zephrous5747], and Tzu-Ching (Thomson) Yen [ThomsonYen].
 
 # Other Planted Solution Types
-See additional code in the repository [iloaiza/planted_solutions](https://github.com/iloaiza/planted_solutions).
+See additional code for different planted solution types in the repositories [iloaiza/planted_solutions](https://github.com/iloaiza/planted_solutions) and [Rick0317/planted_solutions](https://github.com/Rick0317/planted_solutions).
 
 # Article
 **Corresponding article:** L. Wang, J. T. Cantin, S. Patel, I. Loaiza, R. Huang, and A. F. Izmaylov, *Planted solutions in quantum chemistry: a framework for generating large, non-trivial Hamiltonians with known ground state* (2025), arXiv:XXXX.XXXXX.
 
-The notebook referenced in Appendix C of the above article is located at [licop_mutual_commutativity/licop_mutual_commutativity.ipynb](https://github.com/jtcantin/planted_solutions/licop_mutual_commutativity)
+The notebook `licop_mutual_commutativity.ipynb` referenced in Appendix C of the above article is located at [licop_mutual_commutativity/licop_mutual_commutativity.ipynb](https://github.com/jtcantin/planted_solutions/tree/main/licop_mutual_commutativity/licop_mutual_commutativity.ipynb)
 
 
 # Ground State Energy Estimation Benchmark
